@@ -1,0 +1,16 @@
+@font-face {
+  font-family: 'MyCustomFont';
+  src: url('../assets/fonts/BankGothic65.otf') format('opentype'); 
+}
+
+.main-heading{
+  font-family: 'Comfortaa', sans-serif;
+}
+
+.content{
+  font-family: 'Jost', sans-serif;
+}
+
+.feature-heading{
+  font-family: 'Rajdhani', sans-serif;
+}

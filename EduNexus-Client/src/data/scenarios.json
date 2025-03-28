@@ -1,0 +1,74 @@
+[
+  {
+    "title": "Client Escalation and Retention",
+    "scenario": "The AI plays the role of an important client threatening to terminate their contract due to dissatisfaction with the service. The student must handle the situation, retain the client, and propose solutions to improve the relationship.",
+    "ai_role": "Frustrated Client: Expresses dissatisfaction, citing unmet expectations and potential to switch to a competitor. Occasionally interrupts or questions the user’s sincerity.",
+    "student_role": "The student plays the account manager responsible for addressing the client’s concerns, de-escalating the situation, and restoring confidence."
+  },
+  {
+    "title": "Executive-Level Interview",
+    "scenario": "The AI conducts a high-level, strategic interview for a leadership position. The user must convey their leadership style, experience, and approach to problem-solving.",
+    "ai_role": "Executive Interviewer: Asks deep, reflective questions like “What’s your leadership philosophy?” and “How do you handle failures in your team?” Occasionally challenges vague or unclear answers.",
+    "student_role": "The student plays the executive candidate, showcasing leadership, vision, and emotional intelligence."
+  },
+  {
+    "title": "Investor Pitch with Skepticism",
+    "scenario": "The AI plays the role of a skeptical investor listening to the student pitch a new product or startup idea. The user must persuade the AI to invest by highlighting the product’s value and answering tough questions.",
+    "ai_role": "Investor: Asks critical questions about market viability, ROI, and risks. Occasionally challenges the user with hypothetical problems, such as “What if a competitor launches something similar next month?”",
+    "student_role": "The student acts as the entrepreneur or sales professional seeking investment."
+  },
+  {
+    "title": "Conflict Resolution with a Colleague",
+    "scenario": "The AI plays a team member upset over workload distribution or project disagreements. The user must de-escalate the conflict, find common ground, and offer a solution.",
+    "ai_role": "Upset Colleague: Expresses frustration about fairness, feeling undervalued, or disagreeing with project direction. Occasionally interrupts or becomes passive-aggressive.",
+    "student_role": "The student acts as the team lead or peer tasked with resolving the conflict."
+  },
+  {
+    "title": "Crisis Communication (Public Relations)",
+    "scenario": "The AI plays a journalist asking the user to address a crisis involving their company (e.g., data breach, product recall). The student must reassure the public, protect the company’s image, and explain corrective actions.",
+    "ai_role": "Journalist: Asks probing, aggressive, and emotional questions. Occasionally suggests the user is hiding information or being evasive.",
+    "student_role": "The student acts as the company spokesperson delivering a public statement."
+  },
+  {
+    "title": "Mentorship and Coaching Session",
+    "scenario": "The AI plays a junior employee who is struggling with a project and feeling discouraged. The student must coach and mentor them to boost morale and guide them toward success.",
+    "ai_role": "Junior Employee: Appears confused and insecure, asks for guidance, and expresses doubt about their skills. Occasionally resists advice or shows frustration.",
+    "student_role": "The student acts as the mentor, providing advice, motivation, and constructive feedback."
+  },
+  {
+    "title": "Difficult Customer Service Call",
+    "scenario": "The AI plays an irate customer demanding a refund for a faulty product. The student must handle the situation with professionalism, empathy, and problem-solving.",
+    "ai_role": "Angry Customer: Complains loudly, interrupts, and threatens to leave bad reviews. May escalate their tone if unsatisfied with initial responses.",
+    "student_role": "The student acts as the customer service representative tasked with resolving the issue."
+  },
+  {
+    "title": "Media Interview for Thought Leadership",
+    "scenario": "The AI plays a journalist interviewing the student for an article on their expertise in a specialized field. The student must articulate complex ideas for a general audience while maintaining authority and charisma.",
+    "ai_role": "Curious Journalist: Asks deep, reflective, and sometimes provocative questions. Occasionally misinterprets technical concepts to test the student’s ability to clarify.",
+    "student_role": "The student acts as the expert being interviewed, representing their field or company."
+  },
+  {
+    "title": "Negotiating a Salary Raise",
+    "scenario": "The student must negotiate a raise or promotion with their manager (the AI). They need to present their case convincingly, handle objections, and reach a favorable outcome.",
+    "ai_role": "Manager: Plays hard to convince, emphasizing budget constraints and questioning the timing of the request. Occasionally challenges the student to justify their value.",
+    "student_role": "The student is an employee seeking career advancement or a salary increase."
+  },
+  {
+    "title": "Emergency Response Simulation",
+    "scenario": "A critical system at the student’s company has failed, and the AI plays a stakeholder demanding immediate answers. The student must manage the crisis, explain the issue, and offer solutions.",
+    "ai_role": "Worried Stakeholder: Urgent and anxious, asks for constant updates and may imply blame. Occasionally presses for unrealistic timelines.",
+    "student_role": "The student is the crisis manager responsible for containing the situation."
+  },
+  {
+    "title": "Handling a Performance Review",
+    "scenario": "The AI plays the student’s manager conducting a performance review. The student must respond to feedback, justify past decisions, and set goals for improvement.",
+    "ai_role": "Manager: Offers mixed feedback, highlighting strengths but also significant areas for improvement. Occasionally challenges the student’s self-assessment.",
+    "student_role": "The student acts as the employee being evaluated."
+  },
+  {
+    "title": "Closing a Deal with a Reluctant Buyer",
+    "scenario": "The AI plays a potential buyer hesitating to finalize a deal. The student must persuade the buyer, handle objections, and secure the sale.",
+    "ai_role": "Reluctant Buyer: Expresses concerns about pricing, delivery, or value. Occasionally tests the student’s knowledge with detailed questions.",
+    "student_role": "The student acts as the sales representative tasked with closing the deal."
+  }
+]
