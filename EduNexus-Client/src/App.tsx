@@ -4,19 +4,14 @@ import CoursePage from "./pages/teacher/course/course";
 import CourseCreate from "./pages/teacher/Coursecreate";
 import LessonCreate from "./pages/teacher/Lessoncreate"
 import Testing from "./pages/testing";
-import SoftSkillQuiz from "./pages/SoftSkillQuiz";
-import MultimodalLive from "./pages/MultimodalLive";
-import HardSkillQuiz from "./pages/HardSkillQuiz";
-import Interview from "./pages/Interview";
-import AssessmentPage from "./pages/AssessmentPage";
-import Dashboard from "./pages/Dashboard/Dashboard";
+
 import Login from "./pages/Login"
 import Register from "./pages/register/Register"
 import Pico from "./pages/Pico"
 import Home from "./pages/student/Home";
 import Explore from "./pages/student/Explore"
 import CourseOverview from "./pages/student/CourseOverview"
-import JobRoles from "./pages/JobRoles";
+
 import Content from "./pages/student/content/Content";
 import LabManual from "./pages/teacher/course/Lab Manual/LabManual";
 import LabManualCreate from "./pages/teacher/course/Lab Manual/LabManualCreate";
@@ -27,6 +22,7 @@ import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
+import TimetableForm from "./pages/teacher/generate_timetable";
 function App() {
   return (
     <Routes>
@@ -42,14 +38,8 @@ function App() {
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
       <Route element={<LessonsGrid />} path="/teacher/scheduler" />
-      <Route element={<SoftSkillQuiz />} path="/job-seeker/soft-skill-quiz" />
-      <Route element={<HardSkillQuiz />} path="/job-seeker/technical-quiz" />
-      <Route element={<Interview />} path="/job-seeker/interview" />
-      <Route element={<MultimodalLive />} path="/job-seeker/roleplay-exercise" />
-      <Route element={<AssessmentPage />} path="/job-seeker/assessment" />
-      <Route element={<Dashboard />} path="/job-seeker/dashboard" />
-      <Route element={<JobRoles />} path="/job-seeker/job-roles" />
-
+      <Route element={<TimetableForm />} path="/teacher/timetable" />
+      
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />
       <Route element={<Home />} path="/student/home" />

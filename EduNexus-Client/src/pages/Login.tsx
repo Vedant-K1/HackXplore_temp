@@ -43,7 +43,7 @@ const Login = () => {
 
   const teacherForm = useForm({ resolver: yupResolver(schema) });
   const studentForm = useForm({ resolver: yupResolver(schema) });
-  const companyForm = useForm({ resolver: yupResolver(schema) });
+  
 
   const handleLogin = async (data: LoginData, endpoint: string) => {
     try {
@@ -64,10 +64,6 @@ const Login = () => {
           sessionStorage.setItem('teacher_authenticated', 'true');
           navigate('/teacher/dashboard');
           
-        }
-        else if(activeTab==2){
-          sessionStorage.setItem('job_seeker_authenticated', 'true');
-          navigate('/job-seeker/assessment');
         }
         else{
           sessionStorage.setItem('student_authenticated', 'true');
@@ -182,36 +178,7 @@ const Login = () => {
                 </Box>
               </TabPanel>
 
-              <TabPanel>
-                <Box my={8} textAlign='left'>
-                  <form onSubmit={companyForm .handleSubmit((data) => handleLogin(data, '/api/job_seeker/login'))}>
-                    <FormControl isInvalid={!!companyForm .formState.errors.email}>
-                      <FormLabel>Email address</FormLabel>
-                      <Input type='email' placeholder='Enter your email address' {...companyForm .register('email')} />
-                      <FormErrorMessage color={useColorModeValue('purple.600', 'white')}>{companyForm .formState.errors.email?.message}</FormErrorMessage>
-                    </FormControl>
-
-                    <FormControl mt={4} isInvalid={!!companyForm .formState.errors.password}>
-                      <FormLabel>Password</FormLabel>
-                      <Input type='password' placeholder='Enter your password' {...companyForm .register('password')} />
-                      <FormErrorMessage>{companyForm .formState.errors.password?.message}</FormErrorMessage>
-                    </FormControl>
-
-                    <HStack justifyContent='space-between' mt={4}>
-                      <Box>
-                        <Checkbox colorScheme='purple'>Remember Me</Checkbox>
-                      </Box>
-                      <Box>
-                        <Link color={useColorModeValue('purple.400', 'gray.500')}>Forgot your password?</Link>
-                      </Box>
-                    </HStack>
-
-                    <Button colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }} variant="outline" type="submit" width="full" mt={4}>
-                      Login
-                    </Button>
-                  </form>
-                </Box>
-              </TabPanel>
+              
             </TabPanels>
           </Tabs>
           <Text>
