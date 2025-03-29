@@ -28,9 +28,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
-uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = "mongodb+srv://ishashah2303:" + password +"@cluster0.mp52ofe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
-mongodb = client["FYP"]
+mongodb = client["CodeDIV"]
 teachers_collection = mongodb["teacher"]
 lessons_collection = mongodb["lessons"]
 courses_collection = mongodb["course"]
@@ -777,3 +777,28 @@ def download_pdf():
 def logout():
     session.clear()
     return jsonify({"message": "User logged out successfully", "response":True}), 200
+
+
+#############------------------Code DIV Changes----------------##################
+
+from core.code_div import *
+
+@teachers.route('/generate_timetable', methods=['POST'])
+def generate_timetable_route():
+    data = request.get_json()
+    teachers_subjects = data.get("teachers_subjects", {})
+    hours_per_week = data.get("hours_per_week", {})
+    preferred_slots = data.get("preferred_slots", {})
+    classrooms = data.get("classrooms", [])
+    lab_requirements = data.get("lab_requirements", {})
+    start_time = data.get("start_time", "8:30")
+    end_time = data.get("end_time", "17:30")
+    
+    timetable = generate_timetable(teachers_subjects, hours_per_week, preferred_slots, classrooms, lab_requirements, start_time, end_time)
+    
+    if isinstance(timetable, str):  # Convert string to dictionary if needed
+        timetable = json.loads(timetable)
+    
+    print(timetable)
+    excel_file = save_timetable_to_excel(timetable)
+    return send_file(excel_file, as_attachment=True, download_name="timetable.xlsx")
