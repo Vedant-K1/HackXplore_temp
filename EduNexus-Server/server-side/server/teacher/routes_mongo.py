@@ -787,24 +787,29 @@ from core.code_div import *
 @teachers.route('/timetable', methods=['POST'])
 def generate_timetable_route():
     data = request.get_json()
-    teachers_subjects = data.get("teachers_subjects", {})
-    class_subjects=data.get("class_subjects", {})
-    hours_per_week = data.get("hours_per_week", {})
-    preferred_slots = data.get("preferred_slots", {})
-    classrooms = data.get("classrooms", [])
-    lab_requirements = data.get("lab_requirements", {})
-    start_time = data.get("start_time", {})
-    end_time = data.get("end_time", {})
+    teachers_subjects = data.get("teachers_subjects", {}) #{teacher:[sub1,sub2]}
+    classes_subjects=data.get("class_subjects", {}) #{class:[sub1,sub2]}
+    hours_per_week = data.get("hours_per_week", {}) #{subject:hours}
+    preferred_slots = data.get("preferred_slots", {}) #{teacher:"slot"}
+    classrooms = data.get("classrooms", []) # [classroom1, classroom2]
+    labs = data.get("labs", []) # [lab1, lab2]
+    lab_requirements = data.get("lab_requirements", {}) #{sub:lab1}
+    theory_requirements = data.get("theory_requirements", []) #[sub1,sub2]
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
     
     print("Teachers and Subjects:", teachers_subjects)
+    print("Class Subjects:", classes_subjects)
     print("Hours per Week:", hours_per_week)
     print("Preferred Slots:", preferred_slots)
     print("Classrooms:", classrooms)
+    print("Labs:", labs)
     print("Lab Requirements:", lab_requirements)
+    print("Theory Requirements:", theory_requirements)
     print("Start Time:", start_time)
     print("End Time:", end_time)
     
-    timetable = generate_timetable(teachers_subjects, hours_per_week, preferred_slots, classrooms, lab_requirements, start_time, end_time)
+    timetable = generate_timetable(teachers_subjects, classes_subjects, hours_per_week, preferred_slots, classrooms,labs, lab_requirements,theory_requirements, start_time, end_time)
     
     if isinstance(timetable, str):  # Convert string to dictionary if needed
         timetable = json.loads(timetable)
@@ -812,3 +817,4 @@ def generate_timetable_route():
     # print(timetable)
     excel_file = save_timetable_to_excel(timetable)
     return send_file(excel_file, as_attachment=True, download_name="timetable.xlsx")
+
