@@ -784,16 +784,17 @@ def logout():
 from core.code_div import *
 
 
-@teachers.route('/generate_timetable', methods=['POST'])
+@teachers.route('/timetable', methods=['POST'])
 def generate_timetable_route():
     data = request.get_json()
     teachers_subjects = data.get("teachers_subjects", {})
+    class_subjects=data.get("class_subjects", {})
     hours_per_week = data.get("hours_per_week", {})
     preferred_slots = data.get("preferred_slots", {})
     classrooms = data.get("classrooms", [])
     lab_requirements = data.get("lab_requirements", {})
-    start_time = data.get("start_time", "8:30")
-    end_time = data.get("end_time", "17:30")
+    start_time = data.get("start_time", {})
+    end_time = data.get("end_time", {})
     
     print("Teachers and Subjects:", teachers_subjects)
     print("Hours per Week:", hours_per_week)
