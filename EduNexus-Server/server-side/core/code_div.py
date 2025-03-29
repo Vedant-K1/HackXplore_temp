@@ -1,7 +1,8 @@
 import pandas as pd
 import json
 from google import genai
-
+from datetime import datetime
+import os
 
 
 def generate_timetable(teachers_subjects, hours_per_week, preferred_slots, classrooms, lab_requirements, start_time, end_time):
@@ -20,7 +21,6 @@ def generate_timetable(teachers_subjects, hours_per_week, preferred_slots, class
     - The classes each teacher is assigned to.  
     - The total number of hours per week each teacher needs to teach each subject.  
     
-    Example:
     teachers_subjects = {teachers_subjects} 
     hours_per_week = {hours_per_week}  
 
@@ -28,14 +28,12 @@ def generate_timetable(teachers_subjects, hours_per_week, preferred_slots, class
     - The preferred days and hours for each teacher.  
     - Any unavailable slots for specific teachers.  
 
-    Example:
     preferred_slots = {preferred_slots} 
 
     3. **Classrooms and Labs**  
     - The total number of classrooms and labs available.  
     - The subjects that require specific lab allocations (e.g., Computer Science needs a computer lab).  
 
-    Example:
     classrooms = {classrooms}  
     lab_requirements = {lab_requirements}  
 
@@ -43,7 +41,6 @@ def generate_timetable(teachers_subjects, hours_per_week, preferred_slots, class
     - The start and end times of the academic day.  
     - Each lecture lasts **1 hour**, while lab sessions last **2 hours**.  
 
-    Example:
     start_time = {start_time}  # Integer (e.g., 9 for 9:00 AM)
     end_time = {end_time}  # Integer (e.g., 17 for 5:00 PM)
 
@@ -55,22 +52,26 @@ def generate_timetable(teachers_subjects, hours_per_week, preferred_slots, class
     5.Prioritize teacher preferences when possible.
 
     ### **Output Format:**  
-    The timetable should be structured in JSON format as follows:  
+    The timetable should be structured in JSON format as given in the example below:  
 
     ```json
     'teachers':{{
-
-    'monday_Mrs Johnson':[[],["CR1","10A","Maths"],[],[],["Lab1","10B","Computer"],["Lab1","10B","Computer"]],
-    'tuesday_Mrs Johnson':[[],[],["CR2","10A","Maths"],[],[],[]],
-    and so on....
-    'Saturday_Mr Smith': [["CR1","10D","Science"],["CR1","10B","Science"],[],[],[],[]]
+        'monday_Mrs Johnson':[[],["CR1","10A","Maths"],[],[],["Lab1","10B","Computer"],["Lab1","10B","Computer"]],
+        'tuesday_Mrs Johnson':[[],[],["CR2","10A","Maths"],[],[],[]],
+        and so on....
+        'Saturday_Mr Smith': [["CR1","10D","Science"],["CR1","10B","Science"],[],[],[],[]]
     }}
     'Classes':{{
-    'monday_10A':[[],["CR1","Mrs Johnson","Maths"],[],[],[],[]],
-    'tuesday_10A':[[],[],["CR2","Mrs Johnson","Maths"],[],[],[]],
-    and so on...
-    'Saturday_10D':[["102","Mr Smith","Science"],[],[],[],[],[]]
+        'monday_10A':[[],["CR1","Mrs Johnson","Maths"],[],[],[],[]],
+        'tuesday_10A':[[],[],["CR2","Mrs Johnson","Maths"],[],[],[]],
+        and so on...
+        'Saturday_10D':[["102","Mr Smith","Science"],[],[],[],[],[]]
     }}```
+    Each list above represents a time slot in the day, where each time slot can contain a list of 3 elements: 
+    [Classroom, class, Subject] for teachers and
+    [Classroom, Teacher, Subject] for classes.
+    
+    If a slot is empty, it should be represented as an empty list.
     Analyze the input constraints and generate an optimized timetable that follows the above rules. If a perfect schedule isn't possible, provide the best possible solution and highlight any conflicts.
 
     Take a deep breath and work on this problem step-by-step.
@@ -90,7 +91,16 @@ def generate_timetable(teachers_subjects, hours_per_week, preferred_slots, class
 
 
 def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
-    file_path = "timetable.xlsx"
+    output_folder = "/timetables_output"
+
+    # Create the folder if it doesn't exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+    # Generate a unique file name with a timestamp
+    unique_name = f"timetable_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    file_path = os.path.join(output_folder, unique_name)
+    
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
     workbook = writer.book
     
@@ -240,6 +250,6 @@ def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
         for i in range(df.shape[0]):
             for j in range(df.shape[1]):
                 worksheet.write(i + 1, j + 1, df.iloc[i, j], cell_format)
-                
+    
     writer.close()
     return file_path
