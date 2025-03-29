@@ -783,7 +783,8 @@ def logout():
 
 from core.code_div import *
 
-@teachers.route('/generate_timetable', methods=['POST'])
+
+@app.route('/generate_timetable', methods=['POST'])
 def generate_timetable_route():
     data = request.get_json()
     teachers_subjects = data.get("teachers_subjects", {})
@@ -799,6 +800,6 @@ def generate_timetable_route():
     if isinstance(timetable, str):  # Convert string to dictionary if needed
         timetable = json.loads(timetable)
     
-    print(timetable)
+    # print(timetable)
     excel_file = save_timetable_to_excel(timetable)
     return send_file(excel_file, as_attachment=True, download_name="timetable.xlsx")
