@@ -23,6 +23,8 @@ import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
 import TimetableForm from "./pages/teacher/generate_timetable.tsx";
+import CreateAssignment from "./pages/teacher/CreateAssignment.tsx";
+import Assignment from "./pages/Assignment.tsx";
 function App() {
   return (
     <Routes>
@@ -34,6 +36,7 @@ function App() {
       <Route element={<TeacherDashboard />} path="/teacher/dashboard" />
       <Route element={<CourseCreate />} path="/teacher/create-course" />
       <Route element={<LessonCreate />} path="/teacher/create-lesson" />
+      <Route element={<CreateAssignment />} path="/teacher/create-assignment" />
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
@@ -44,6 +47,7 @@ function App() {
       <Route element={<Pico />} path="/pico" />
       <Route element={<Home />} path="/student/home" />
       <Route element={<Studentscheduler />} path="/student/scheduler" />
+      <Route element={<Assignment />} path="/student/assignment" />
       <Route element={<SharedCourses />} path="/student/shared-courses" />
       <Route element={<Explore />} path="/student/explore" />
       <Route element={<CourseOverview />} path="/student/course-overview" />

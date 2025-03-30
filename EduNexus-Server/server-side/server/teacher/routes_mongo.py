@@ -35,6 +35,7 @@ teachers_collection = mongodb["teacher"]
 lessons_collection = mongodb["lessons"]
 courses_collection = mongodb["course"]
 lab_manuals_collection = mongodb["lab_manuals"]
+assignments_collection = mongodb["assignments"] 
 
 @teachers.route('/register', methods=['POST'])
 def register():
@@ -819,7 +820,7 @@ def generate_timetable_route():
     return send_file(excel_file, as_attachment=True, download_name="timetable.xlsx")
 
 
-assignments_collection = db["assignments"] 
+
 
 # 1. Create Assignment (Teacher Side)
 @teachers.route('/create-assignment', methods=['POST'])
@@ -842,7 +843,7 @@ def create_assignment():
         "subject_name": subject_name,
         "details": details,
         "active": active,
-        "created_at": datetime.datetime.utcnow(),
+        "created_at": datetime.utcnow(),
         "evaluations": []  # To store student submissions
     }
 

@@ -126,6 +126,12 @@ export const Navbar = () => {
                                     <span>Create Course</span>
                                 </HStack>
                             </NavLink>
+                            <NavLink href="/teacher/create-assignment">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Create Assignment</span>
+                                </HStack>
+                            </NavLink>
                             <NavLink href="/teacher/timetable">
                                 <HStack spacing={2}>
                                     <MdCreateNewFolder size={24} />
@@ -154,6 +160,12 @@ export const Navbar = () => {
                                 <HStack spacing={2}>
                                     <FaHome size={24} />
                                     <span>Home</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/student/assignment">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Assignments</span>
                                 </HStack>
                             </NavLink>
 
