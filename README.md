@@ -3,7 +3,9 @@
 **AcademIQ** is an innovative edtech platform designed to bridge the gaps in traditional education. It offers robust features for both teachers and students, creating a dynamic, interactive, and visually engaging learning environment.
 
 ---
+<div align='center'>
 <img src="Images/Screenshot (124).png" alt="Landing page" width="700"/>
+</div>
 ---
 
 ## Table of Contents
