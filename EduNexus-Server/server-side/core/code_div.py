@@ -4,7 +4,7 @@ from google import genai
 from datetime import datetime
 import os
 
-client = genai.Client(api_key="AIzaSyAl03NHDQ6gnXrXZKm_E3OiX7O-d8Bn_YQ")
+client = genai.Client(api_key="")
 
 def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, preferred_slots, classrooms,labs, lab_requirements,theory_requirements, start_time, end_time):
     
