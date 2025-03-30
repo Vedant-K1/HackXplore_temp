@@ -10,8 +10,8 @@ export default function LandingPage() {
           {/* <Heading as="h1" size={['2xl', '3xl']} color="white" display="inline">
             Welcome to{' '}
           </Heading> */}
-          <Heading as="h1" size={['4xl', '4xl']} style={{fontFamily: "Jost"}} color="purple.800" display="inline" letterSpacing={20}>
-            EduNexus
+          <Heading as="h1" size={['4xl', '4xl']} style={{fontFamily: "Jost"}} color="purple.800" display="inline" >
+            AcademIQ
           </Heading>
         </Box>
         <Flex
