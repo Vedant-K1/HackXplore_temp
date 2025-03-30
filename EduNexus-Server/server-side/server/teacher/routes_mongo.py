@@ -35,6 +35,7 @@ teachers_collection = mongodb["teacher"]
 lessons_collection = mongodb["lessons"]
 courses_collection = mongodb["course"]
 lab_manuals_collection = mongodb["lab_manuals"]
+assignments_collection = mongodb["assignments"] 
 
 @teachers.route('/register', methods=['POST'])
 def register():

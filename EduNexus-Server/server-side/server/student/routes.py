@@ -1122,7 +1122,7 @@ def submit_assignment():
         "marks": evaluation_details.get("marks", []),
         "justification": evaluation_details.get("Justification", []),
         "total_marks_obtained": evaluation_details.get("total_marks", 0),
-        "submitted_at": datetime.datetime.utcnow()
+        "submitted_at": datetime.utcnow()
     }
 
     update_result = assignments_collection.update_one(
