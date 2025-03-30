@@ -11,6 +11,14 @@ import Interview from "./pages/Interview";
 import JobRoles from "./pages/JobRoles";
 // import "./pages/student/content/i18n"
 import AssessmentPage from "./pages/AssessmentPage";
+import GitHubRepoExplorer from "./pages/teacher/Github";
+import CreateProject from "./teacher/projects/CreateProject";
+import ProjectList from "./teacher/projects/ProjectList";
+import ViewProject from "./teacher/projects/ViewProject";
+
+import CreateProjectStudent from './student/projects/CreateProject'
+import ProjectListStudent from './student/projects/ProjectList'
+import ViewProjectStudent from './student/projects/ViewProject'
 
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import CourseCreate from "./pages/teacher/Coursecreate";
@@ -37,9 +45,18 @@ function App() {
       <Route element={<Dashboard />} path="/student/dashboard" />
       <Route element={<JobRoles />} path="/student/job-roles" />
 
+      <Route element={<CreateProjectStudent />} path="/student/create-project" />
+      <Route element={<ProjectListStudent />} path="/student/list-project" />
+      <Route path="/student/projects/view/:projectName" element={<ViewProjectStudent />} />
+
       <Route element={<TeacherDashboard />} path="/teacher/dashboard" />
       <Route element={<CourseCreate />} path="/teacher/create-course" />
       <Route element={<LessonCreate />} path="/teacher/create-lesson" />
+      <Route element={<GitHubRepoExplorer />} path="/teacher/projects" />
+      {/* {} */}
+      <Route element={<CreateProject />} path="/teacher/create-project" />
+      <Route element={<ProjectList />} path="/teacher/list-project" />
+      <Route path="/teacher/projects/view/:projectName" element={<ViewProject />} />
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />

@@ -19,7 +19,7 @@ load_dotenv()
 
 job_seeker = Blueprint(name='job_seeker', import_name=__name__, url_prefix="/job_seeker")
 password = quote_plus(os.getenv("MONGO_PASS"))
-uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = "mongodb+srv://ishashah2303:" + password +"@cluster0.mp52ofe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
 
 student_data = client["student_data"]

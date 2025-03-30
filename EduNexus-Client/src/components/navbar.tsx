@@ -13,7 +13,7 @@ import {
     MenuItem,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher } from 'react-icons/fa';
+import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher,FaGithub } from 'react-icons/fa';
 import { RiAiGenerate } from "react-icons/ri";
 import { MdOutlineTravelExplore, MdCreateNewFolder, MdLogout } from "react-icons/md";
 import { Logo } from './icons';
@@ -51,37 +51,37 @@ export const Navbar = () => {
     const [jobseekerAuthenticated, setJobSeekerAuthenticated] = useState(false);
 
 
-    const handleStudentLogout = async () => {
+    const handleStudentLogout = async (clash=false) => {
         try {
             await axios.get('/api/student/logout', { withCredentials: true });
             setStudentAuthenticated(false);
             sessionStorage.removeItem('student_authenticated');
             localStorage.clear();
-            navigate("/");
+            if( !clash) navigate("/");
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handleJobSeekerLogout = async () => {
+    const handleJobSeekerLogout = async (clash=false) => {
         try {
             await axios.get('/api/job_seeker/logout', { withCredentials: true });
             setJobSeekerAuthenticated(false);
             sessionStorage.removeItem('job_seeker_authenticated');
             localStorage.clear();
-            navigate("/");
+            if( !clash) navigate("/");
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handleTeacherLogout = async () => {
+    const handleTeacherLogout = async (clash=false) => {
         try {
             await axios.get('/api/teacher/logout', { withCredentials: true });
             setTeacherAuthenticated(false);
             sessionStorage.removeItem('teacher_authenticated');
             localStorage.clear();
-            navigate("/");
+            if( !clash) navigate("/");
         } catch (error) {
             console.error(error);
         }
@@ -99,6 +99,12 @@ export const Navbar = () => {
 
     }, []);
 
+    console.log(sessionStorage.getItem('student_authenticated') === 'true',sessionStorage.getItem('teacher_authenticated') === 'true',sessionStorage.getItem('job_seeker_authenticated') === 'true')
+
+   
+
+
+   
     return (
         <Box bg={"purple.700"} position="sticky" boxShadow={'0 5px 6px rgba(0, 0, 0, 0.4)'} paddingX={"20"} top={0} zIndex="sticky">
             <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
@@ -123,12 +129,19 @@ export const Navbar = () => {
 
 
                 <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
-                    {teacherAuthenticated && (
+                    {teacherAuthenticated  && (
                         <>
                             <NavLink href="/teacher/dashboard">
                                 <HStack spacing={2}>
                                     <FaHome size={24} />
                                     <span>Home</span>
+                                </HStack>
+                            </NavLink>
+
+                            <NavLink href="/teacher/list-project">
+                                <HStack spacing={2}>
+                                    <FaGithub size={24} />
+                                    <span>Github Explorer</span>
                                 </HStack>
                             </NavLink>
 
@@ -155,12 +168,19 @@ export const Navbar = () => {
                             </Box>
                         </>
                     )}
-                    {studentAuthenticated && (
+                    {studentAuthenticated   && (
                         <>
                             <NavLink href="/student/home">
                                 <HStack spacing={2}>
                                     <FaHome size={24} />
                                     <span>Home</span>
+                                </HStack>
+                            </NavLink>
+
+                            <NavLink href="/student/list-project">
+                                <HStack spacing={2}>
+                                    <FaHome size={24} />
+                                    <span>Projects</span>
                                 </HStack>
                             </NavLink>
 
@@ -211,7 +231,7 @@ export const Navbar = () => {
                             </Box>
                         </>
                     )}
-                    {jobseekerAuthenticated && (
+                    {jobseekerAuthenticated  && (
                         <>
                             <NavLink href="/student/dashboard">
                                 <HStack spacing={2}>

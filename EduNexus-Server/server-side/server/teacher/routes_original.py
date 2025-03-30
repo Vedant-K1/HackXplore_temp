@@ -35,7 +35,7 @@ import json
 
 users = Blueprint(name='users', import_name=__name__)
 
-DEVICE_TYPE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE_TYPE = torch.device( "mps" if torch.backends.mps.is_available() else "cpu")
 IMAGE_EMBEDDING_MODEL_NAME = "openai/clip-vit-base-patch16"
 CLIP_MODEL = AutoModel.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME).to(DEVICE_TYPE)
 CLIP_PROCESSOR = AutoImageProcessor.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)

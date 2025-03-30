@@ -117,7 +117,16 @@ class ServerUtils:
     
     @staticmethod
     def detect_source_language(text):
-        return str(LANG_DETECTOR.detect_language_of(text)).split('.')[1].lower()
+        try:
+            detected = LANG_DETECTOR.detect_language_of(text)
+            if detected is None:
+                return 'en'
+            parts = str(detected).split('.')
+            if len(parts) > 1:
+                return parts[1].lower()
+            return 'en'
+        except Exception:
+            return 'en'
     
     @staticmethod
     def json_list_to_markdown(content_list : list[dict]):
