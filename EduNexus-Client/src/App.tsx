@@ -4,19 +4,14 @@ import CoursePage from "./pages/teacher/course/course";
 import CourseCreate from "./pages/teacher/Coursecreate";
 import LessonCreate from "./pages/teacher/Lessoncreate"
 import Testing from "./pages/testing";
-import SoftSkillQuiz from "./pages/SoftSkillQuiz";
-import MultimodalLive from "./pages/MultimodalLive";
-import HardSkillQuiz from "./pages/HardSkillQuiz";
-import Interview from "./pages/Interview";
-import AssessmentPage from "./pages/AssessmentPage";
-import Dashboard from "./pages/Dashboard/Dashboard";
+
 import Login from "./pages/Login"
 import Register from "./pages/register/Register"
 import Pico from "./pages/Pico"
 import Home from "./pages/student/Home";
 import Explore from "./pages/student/Explore"
 import CourseOverview from "./pages/student/CourseOverview"
-import JobRoles from "./pages/JobRoles";
+
 import Content from "./pages/student/content/Content";
 import LabManual from "./pages/teacher/course/Lab Manual/LabManual";
 import LabManualCreate from "./pages/teacher/course/Lab Manual/LabManualCreate";
@@ -38,6 +33,10 @@ import ViewProjectStudent from "./pages/student/projects/ViewProject";
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
+import TimetableForm from "./pages/teacher/generate_timetable.tsx";
+import CreateAssignment from "./pages/teacher/CreateAssignment.tsx";
+import Assignment from "./pages/Assignment.tsx";
+import Research from "./pages/teacher/research.tsx";
 function App() {
   return (
     <Routes>
@@ -54,22 +53,21 @@ function App() {
       <Route path="/teacher/projects/view/:projectName" element={<ViewProject />} />
 
       <Route element={<LessonCreate />} path="/teacher/create-lesson" />
+      <Route element={<CreateAssignment />} path="/teacher/create-assignment" />
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
       <Route element={<LessonsGrid />} path="/teacher/scheduler" />
-      <Route element={<SoftSkillQuiz />} path="/job-seeker/soft-skill-quiz" />
-      <Route element={<HardSkillQuiz />} path="/job-seeker/technical-quiz" />
-      <Route element={<Interview />} path="/job-seeker/interview" />
-      <Route element={<MultimodalLive />} path="/job-seeker/roleplay-exercise" />
-      <Route element={<AssessmentPage />} path="/job-seeker/assessment" />
-      <Route element={<Dashboard />} path="/job-seeker/dashboard" />
-      <Route element={<JobRoles />} path="/job-seeker/job-roles" />
-
+      <Route element={<TimetableForm />} path="/teacher/timetable" />
+      <Route element={<Research />} path="/teacher/research" />
+      <Route element={<Research />} path="/student/research" />
+      
+      
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />
       <Route element={<Home />} path="/student/home" />
       <Route element={<Studentscheduler />} path="/student/scheduler" />
+      <Route element={<Assignment />} path="/student/assignment" />
       <Route element={<SharedCourses />} path="/student/shared-courses" />
       <Route element={<Explore />} path="/student/explore" />
       <Route element={<CourseOverview />} path="/student/course-overview" />

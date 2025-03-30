@@ -1167,3 +1167,80 @@ def convert_docx():
     except Exception as e:
         print("An error occurred while creating the document:", e)
         return jsonify({"message": "Failed to create document", "response": False}), 500
+
+
+
+#-----------------------CODE DIV---------------------
+
+
+
+assignments_collection = mongodb["assignments"]
+from core.code_div import ass_eval
+import tempfile
+
+# 2. Fetch All Assignments (Teacher & Student)
+@students.route('/fetch-assignments', methods=['GET'])
+def fetch_assignments():
+    assignments = list(assignments_collection.find({}, {"_id": 0}))
+    return jsonify({"assignments": assignments})
+
+
+# 5. Submit Assignment (Student Side)
+@students.route('/submit-assignment', methods=['POST'])
+def submit_assignment():
+    """
+    Student submits their assignment by uploading a PDF.
+    The student must provide the assignment_id, and the backend uses that to fetch assignment details.
+    """
+    if 'doc' not in request.files:
+        return jsonify({"error": "No document uploaded."}), 400
+
+    doc_file = request.files['doc']
+    student_id = request.form.get("student_id", "")
+    assignment_id = request.form.get("assignment_id", "")
+
+    if not assignment_id:
+        return jsonify({"error": "Assignment ID is required"}), 400
+
+    # Lookup the assignment by assignment_id
+    assignment = assignments_collection.find_one({"assignment_id": assignment_id})
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+
+    subject_name = assignment["subject_name"]
+    assignment_details = assignment["details"]
+
+    # Save file temporarily
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        doc_file.save(tmp)
+        tmp_path = tmp.name
+
+    # Evaluate the submission using the AI evaluation function
+    result = ass_eval(subject_name, assignment_details, tmp_path)
+    try:
+        evaluation_details = json.loads(result)
+    except Exception:
+        evaluation_details = {"error": "Invalid evaluation format", "raw_result": result}
+
+    # Build evaluation entry
+    evaluation_entry = {
+        "student_id": student_id,
+        "marks": evaluation_details.get("marks", []),
+        "justification": evaluation_details.get("Justification", []),
+        "total_marks_obtained": evaluation_details.get("total_marks", 0),
+        "submitted_at": datetime.utcnow()
+    }
+
+    update_result = assignments_collection.update_one(
+        {"assignment_id": assignment_id},
+        {"$push": {"evaluations": evaluation_entry}}
+    )
+
+    if update_result.matched_count == 0:
+        return jsonify({"error": "Assignment not found"}), 404
+
+    return jsonify({
+        "message": "Assignment submitted and evaluated successfully",
+        "evaluation": evaluation_entry
+    })
+    

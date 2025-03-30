@@ -5,7 +5,6 @@ import {
 } from '@chakra-ui/react';
 import StudentRegister from './StudentRegister';
 import TeacherRegister from './TeacherRegister';
-import JobSeeker from './JobSeeker';
 const Register = () => {
   return (
     <div>
@@ -17,7 +16,6 @@ const Register = () => {
           <TabList>
             <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Teacher</Tab>
             <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Student</Tab>
-            <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Job Seeker</Tab>
           </TabList>
           <TabPanels>
             <TabPanel bg={'purple.200'}>
@@ -25,9 +23,6 @@ const Register = () => {
             </TabPanel>
             <TabPanel bg={'purple.200'}>
               <StudentRegister />
-            </TabPanel>
-            <TabPanel bg={'purple.200'}>
-              <JobSeeker />
             </TabPanel>
           </TabPanels>
         </Tabs>

@@ -27,6 +27,8 @@ import CoursePage from "./pages/teacher/course/course";
 import LabManual from "./pages/teacher/course/Lab Manual/LabManual";
 import LabManualCreate from "./pages/teacher/course/Lab Manual/LabManualCreate";
 import LessonsGrid from "./pages/teacher/scheduler";
+import CreateAssignment from "./teacher/CreateAssignment";
+import Assignment from "./Assignment";
 
 
 function App() {
@@ -40,6 +42,7 @@ function App() {
       <Route element={<SoftSkillQuiz />} path="/student/soft-skill-quiz" />
       <Route element={<HardSkillQuiz />} path="/student/technical-quiz" />
       <Route element={<Interview />} path="/student/interview" />
+      <Route element={<Assignment />} path="/student/assignment" />
       <Route element={<MultimodalLive />} path="/student/roleplay-exercise" />
       <Route element={<AssessmentPage />} path="/student/assessment" />
       <Route element={<Dashboard />} path="/student/dashboard" />
@@ -57,6 +60,7 @@ function App() {
       <Route element={<CreateProject />} path="/teacher/create-project" />
       <Route element={<ProjectList />} path="/teacher/list-project" />
       <Route path="/teacher/projects/view/:projectName" element={<ViewProject />} />
+      <Route element={<CreateAssignment />} path="/teacher/create-assignment" />
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />

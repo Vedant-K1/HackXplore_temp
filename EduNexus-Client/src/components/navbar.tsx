@@ -13,7 +13,7 @@ import {
     MenuItem,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher,FaGithub } from 'react-icons/fa';
+import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher,FaGithub, FaGithub } from 'react-icons/fa';
 import { RiAiGenerate } from "react-icons/ri";
 import { MdOutlineTravelExplore, MdCreateNewFolder, MdLogout } from "react-icons/md";
 import { Logo } from './icons';
@@ -63,18 +63,6 @@ export const Navbar = () => {
         }
     };
 
-    const handleJobSeekerLogout = async (clash=false) => {
-        try {
-            await axios.get('/api/job_seeker/logout', { withCredentials: true });
-            setJobSeekerAuthenticated(false);
-            sessionStorage.removeItem('job_seeker_authenticated');
-            localStorage.clear();
-            if( !clash) navigate("/");
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
     const handleTeacherLogout = async (clash=false) => {
         try {
             await axios.get('/api/teacher/logout', { withCredentials: true });
@@ -91,11 +79,11 @@ export const Navbar = () => {
     useEffect(() => {
         const isStudentAuthenticated = sessionStorage.getItem('student_authenticated') === 'true';
         const isTeacherAuthenticated = sessionStorage.getItem('teacher_authenticated') === 'true';
-        const isJobSeekerAuthenticated = sessionStorage.getItem('job_seeker_authenticated') === 'true';
+       
 
         setStudentAuthenticated(isStudentAuthenticated);
         setTeacherAuthenticated(isTeacherAuthenticated);
-        setJobSeekerAuthenticated(isJobSeekerAuthenticated);
+        
 
     }, []);
 
@@ -121,7 +109,7 @@ export const Navbar = () => {
                         <Box display={"flex"}  >
                             <Logo color='white' />
                             <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="white">
-                                EduNexus
+                                AcademIQ    
                             </Box>
                         </Box>
                     </HStack>
@@ -151,7 +139,30 @@ export const Navbar = () => {
                                     <span>Create Course</span>
                                 </HStack>
                             </NavLink>
-
+                            <NavLink href="/teacher/create-assignment">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Create Assignment</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/teacher/research">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Research</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/teacher/timetable">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Schedule Timetable</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/teacher/list-project">
+                                <HStack spacing={2}>
+                                    <FaGithub size={24} />
+                                    <span>Github Explorer</span>
+                                </HStack>
+                            </NavLink>
                             <Box
                                 px={2}
                                 py={1}
@@ -183,7 +194,24 @@ export const Navbar = () => {
                                     <span>Projects</span>
                                 </HStack>
                             </NavLink>
-
+                            <NavLink href="/student/assignment">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Assignments</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/student/research">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Research</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/student/list-project">
+                                <HStack spacing={2}>
+                                    <FaHome size={24} />
+                                    <span>Projects</span>
+                                </HStack>
+                            </NavLink>
                             <Menu>
                                 <MenuButton
                                     px={2}
@@ -240,23 +268,10 @@ export const Navbar = () => {
                                 </HStack>
                             </NavLink>
 
-                            <Box
-                                px={2}
-                                py={1}
-                                className="feature-heading"
-                                rounded="md"
-                                color={"white"}
-                                textDecoration="none"
-                                _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none', cursor: "pointer" }}
-                                transition="transform 0.3s ease-in-out">
-                                <HStack spacing={2} onClick={handleJobSeekerLogout}>
-                                    <MdLogout size={24} />
-                                    <span>Logout</span>
-                                </HStack>
-                            </Box>
+                          
                         </>
                     )}
-                    {!teacherAuthenticated && !studentAuthenticated && !jobseekerAuthenticated && (
+                    {!teacherAuthenticated && !studentAuthenticated && (
                         <>
                             <NavLink href="/register">
                                 <HStack spacing={2}>

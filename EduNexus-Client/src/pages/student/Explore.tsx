@@ -176,6 +176,7 @@ function Modules() {
             ))}
           </Select>
         </Flex>
+        
       </HStack>
 
       {isLoadingData ? (
@@ -244,7 +245,7 @@ function Modules() {
         </>
       )}
 
-      <ChatWidget />
+      {/* <ChatWidget /> */}
     </div>
   );
 }

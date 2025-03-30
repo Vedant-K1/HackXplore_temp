@@ -21,9 +21,7 @@ def create_app():
 
     from server.teacher.routes_mongo import teachers
     from server.student.routes import students
-    from server.job_seeker.routes import job_seeker
     app.register_blueprint(teachers, url_prefix="/teacher")
     app.register_blueprint(students, url_prefix="/student")
-    app.register_blueprint(job_seeker, url_prefix="/job_seeker")
 
     return app

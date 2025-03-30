@@ -39,6 +39,7 @@ courses_collection = mongodb["course"]
 lab_manuals_collection = mongodb["lab_manuals"]
 projects_collection = mongodb["projects"]
 
+assignments_collection = mongodb["assignments"] 
 
 @teachers.route('/register', methods=['POST'])
 def register():
@@ -920,3 +921,111 @@ def download_pdf():
 def logout():
     session.clear()
     return jsonify({"message": "User logged out successfully", "response": True}), 200
+
+
+#############------------------Code DIV Changes----------------##################
+
+from core.code_div import *
+import tempfile
+
+@teachers.route('/timetable', methods=['POST'])
+def generate_timetable_route():
+    data = request.get_json()
+    teachers_subjects = data.get("teachers_subjects", {}) #{teacher:[sub1,sub2]}
+    classes_subjects=data.get("class_subjects", {}) #{class:[sub1,sub2]}
+    hours_per_week = data.get("hours_per_week", {}) #{subject:hours}
+    preferred_slots = data.get("preferred_slots", {}) #{teacher:"slot"}
+    classrooms = data.get("classrooms", []) # [classroom1, classroom2]
+    labs = data.get("labs", []) # [lab1, lab2]
+    lab_requirements = data.get("lab_requirements", {}) #{sub:lab1}
+    theory_requirements = data.get("theory_requirements", []) #[sub1,sub2]
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
+    
+    print("Teachers and Subjects:", teachers_subjects)
+    print("Class Subjects:", classes_subjects)
+    print("Hours per Week:", hours_per_week)
+    print("Preferred Slots:", preferred_slots)
+    print("Classrooms:", classrooms)
+    print("Labs:", labs)
+    print("Lab Requirements:", lab_requirements)
+    print("Theory Requirements:", theory_requirements)
+    print("Start Time:", start_time)
+    print("End Time:", end_time)
+    
+    timetable = generate_timetable(teachers_subjects, classes_subjects, hours_per_week, preferred_slots, classrooms,labs, lab_requirements,theory_requirements, start_time, end_time)
+    
+    if isinstance(timetable, str):  # Convert string to dictionary if needed
+        timetable = json.loads(timetable)
+    
+    # print(timetable)
+    excel_file = save_timetable_to_excel(timetable)
+    return send_file(excel_file, as_attachment=True, download_name="timetable.xlsx")
+
+
+assignments_collection = mongodb["assignments"] 
+
+# 1. Create Assignment (Teacher Side)
+@teachers.route('/create-assignment', methods=['POST'])
+def create_assignment():
+    data = request.json
+    assignment_name = data.get("assignment_name")
+    subject_name = data.get("subject_name")
+    details = data.get("details")
+    active = data.get("active", True)  # default to active
+
+    if not assignment_name or not subject_name:
+        return jsonify({"error": "Assignment name and subject name are required"}), 400
+
+    # Generate a unique assignment ID using uuid4
+    assignment_id = str(uuid.uuid4())
+
+    assignment = {
+        "assignment_id": assignment_id,
+        "assignment_name": assignment_name,
+        "subject_name": subject_name,
+        "details": details,
+        "active": active,
+        "created_at": datetime.now(),
+        "evaluations": []  # To store student submissions
+    }
+
+    result = assignments_collection.insert_one(assignment)
+    return jsonify({
+        "message": "Assignment created successfully",
+        "assignment_id": assignment_id
+    })
+
+
+# 2. Fetch All Assignments (Teacher & Student)
+@teachers.route('/fetch-assignments', methods=['GET'])
+def fetch_assignments():
+    assignments = list(assignments_collection.find({}, {"_id": 0}))
+    return jsonify({"assignments": assignments})
+
+@teachers.route('/fetch-marks', methods=['GET'])
+def fetch_marks():
+    assignment_id = request.args.get("assignment_id")
+    if not assignment_id:
+        return jsonify({"error": "Assignment ID is required"}), 400
+
+    assignment = assignments_collection.find_one(
+        {"assignment_id": assignment_id},
+        {"evaluations": 1, "_id": 0}
+    )
+
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+
+    evaluations = assignment.get("evaluations", [])
+    # Format the evaluations with only the desired fields.
+    formatted_evaluations = []
+    for evaluation in evaluations:
+        formatted_evaluations.append({
+            "student_id": evaluation.get("student_id"),
+            "total_marks_obtained": evaluation.get("total_marks_obtained"),
+            "marks": evaluation.get("marks"),
+            "justification": evaluation.get("justification")
+        })
+
+    return jsonify({"evaluations": formatted_evaluations})

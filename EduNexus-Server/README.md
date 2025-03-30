@@ -1,4 +1,4 @@
-# EduNexus
+# AcademIQ
 
 ## List of Features
 
