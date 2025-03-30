@@ -1068,7 +1068,7 @@ def convert_docx():
 
 
 
-assignments_collection = db["assignments"]
+assignments_collection = mongodb["assignments"]
 from core.code_div import ass_eval
 import tempfile
 
