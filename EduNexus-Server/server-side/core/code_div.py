@@ -96,7 +96,7 @@ def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, pref
 
     
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-pro-exp-03-25",
         contents=prompt,
         config={
             'response_mime_type': 'application/json',

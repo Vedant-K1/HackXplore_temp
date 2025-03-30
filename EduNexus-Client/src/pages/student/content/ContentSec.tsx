@@ -1,10 +1,11 @@
-import { Box, useToast, Spinner, useColorModeValue, Text, VStack, Link, List, ListItem, Button, Center } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { Box, useToast, Spinner, useColorModeValue, Text, VStack, Link, List, ListItem, Button, Center, Flex, Textarea, useDisclosure } from '@chakra-ui/react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaFilePdf, FaFileAudio } from "react-icons/fa6";
+import { FaFilePdf, FaFileAudio, FaStickyNote, FaTimes, FaSave } from "react-icons/fa";
 import Quiz from './Quiz';
 import VoiceQuiz from './VoiceQuiz';
 import Slideshow from '../course_overview/Slideshow';
+
 interface Subsection {
     title: string;
     content: string;
@@ -90,15 +91,49 @@ export const ContentSec = ({
     const toast = useToast();
     const [isSpinnerLoading, setIsSpinnerLoading] = useState(false);
     const [audioSrc, setAudioSrc] = useState<string | null>(null);
+    const [showStickyNote, setShowStickyNote] = useState(false);
+    const [stickyNote, setStickyNote] = useState('');
+    const noteRef = useRef<HTMLDivElement>(null);
 
     const firstHalf = images[index]?.slice(0, Math.ceil(images[index].length / 2)) || [];
     const secondHalf = images[index]?.slice(Math.ceil(images[index].length / 2)) || [];
     const subsectionfirstHalf = subject?.subsections.slice(0, Math.ceil(subject?.subsections?.length / 2)) || [];
     const subsectionsecondHalf = subject?.subsections.slice(Math.ceil(subject?.subsections?.length / 2)) || [];
 
+    // Load any saved notes when component mounts or subject changes
+    useEffect(() => {
+        if (subject) {
+            const savedNote = localStorage.getItem(`note_${subject.title_for_the_content}`);
+            if (savedNote) {
+                setStickyNote(savedNote);
+            } else {
+                setStickyNote('');
+            }
+        }
+    }, [subject]);
+
     useEffect(() => {
         setAudioSrc(null);
     }, [subject]);
+
+    // Handle clicks outside the sticky note to close it
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (noteRef.current && !noteRef.current.contains(event.target as Node)) {
+                // Don't close if clicking the sticky note button
+                const target = event.target as HTMLElement;
+                if (target.closest('button')?.id === 'stickyNoteBtn') {
+                    return;
+                }
+                setShowStickyNote(false);
+            }
+        }
+        
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [noteRef]);
 
     const fetchAudio = async (content: Subsection[]) => {
         if (!subject) return; // Ensure subject exists
@@ -155,6 +190,23 @@ export const ContentSec = ({
         }
     };
 
+    const saveNote = () => {
+        if (subject) {
+            localStorage.setItem(`note_${subject.title_for_the_content}`, stickyNote);
+            toast({
+                title: 'Note saved',
+                description: 'Your note has been saved successfully',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const toggleStickyNote = () => {
+        setShowStickyNote(!showStickyNote);
+    };
+
     const renderContent = () => {
         if (isLoading) {
             return (
@@ -167,8 +219,84 @@ export const ContentSec = ({
 
         if (index < data_len) {
             return (
-                <Box px={5} mt={4} width={'full'} height={'100vh'} overflowY={"scroll"}>
-                    <Text className='main-heading' mb={5} fontSize={"5xl"}><b>{subject?.title_for_the_content ?? ''}</b></Text>
+                <Box px={5} mt={4} width={'full'} height={'100vh'} overflowY={"scroll"} position="relative">
+                    {/* Flex container for the heading and sticky notes button */}
+                    <Flex justifyContent="space-between" alignItems="center" width="full" mb={5}>
+                        <Text className='main-heading' fontSize={"5xl"}><b>{subject?.title_for_the_content ?? ''}</b></Text>
+                        
+                        {/* Sticky Notes button on the right */}
+                        <Button
+                            id="stickyNoteBtn"
+                            p={6}
+                            color={"white"}
+                            rounded="md"
+                            _hover={{
+                                transform: "translateY(-2px)",
+                                boxShadow: "md",
+                                transition: "transform 0.3s ease",
+                                bg: "purple.600"
+                            }}
+                            bg={"purple.400"}
+                            boxShadow="lg"
+                            onClick={toggleStickyNote}
+                            leftIcon={<FaStickyNote />}
+                        >
+                            Sticky Notes
+                        </Button>
+                    </Flex>
+                    
+                    {/* Inline Sticky Note */}
+                    {showStickyNote && (
+                        <Box
+                            ref={noteRef}
+                            position="absolute"
+                            right="20px"
+                            top="80px"
+                            width="350px"
+                            bg="white"
+                            borderRadius="md"
+                            boxShadow="lg"
+                            p={4}
+                            zIndex={10}
+                            borderWidth="1px"
+                            borderColor="white"
+                            animation="fadeIn 0.3s ease-in-out"
+                            sx={{
+                                '@keyframes fadeIn': {
+                                    '0%': { opacity: 0, transform: 'translateY(-10px)' },
+                                    '100%': { opacity: 1, transform: 'translateY(0)' }
+                                }
+                            }}
+                        >
+                            <Flex justifyContent="space-between" alignItems="center" mb={2}>
+                                <Text fontWeight="bold">Notes for: {subject?.title_for_the_content}</Text>
+                                <Button size="sm" variant="ghost" onClick={toggleStickyNote} p={1}>
+                                    <FaTimes />
+                                </Button>
+                            </Flex>
+                            <Textarea
+                                placeholder="Write your notes here..."
+                                value={stickyNote}
+                                onChange={(e) => setStickyNote(e.target.value)}
+                                minHeight="200px"
+                                bg="white"
+                                borderColor="black"
+                                _hover={{ borderColor: "black" }}
+                                fontSize="md"
+                                mb={2}
+                            />
+                            <Button
+                                size="sm"
+                                colorScheme="purple"
+                                leftIcon={<FaSave />}
+                                onClick={saveNote}
+                                width="full"
+                            >
+                                Save Notes
+                            </Button>
+                        </Box>
+                    )}
+                    
                     <Text className='feature-heading' mb={5} fontSize={"3xl"}>{trans('Find it boring to read? Download and study through voice!')}</Text>
                     <Button
                         variant="outline"

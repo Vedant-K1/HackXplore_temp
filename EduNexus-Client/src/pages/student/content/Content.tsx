@@ -1,4 +1,4 @@
-import { HStack} from '@chakra-ui/react';
+import { HStack } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { Navbar } from "../../../components/navbar"
 import axios from 'axios';
@@ -34,9 +34,6 @@ const Content = () => {
   const [quiz3data, setQuiz3Data] = useState(null);
   const { t, i18n } = useTranslation();
 
-
-
-
   useEffect(() => {
     const fetchData = async () => {
       const moduleid = localStorage.getItem('moduleid') || undefined;
@@ -60,7 +57,6 @@ const Content = () => {
     fetchData();
   }, []);
 
-
   return (
     <>
       <Navbar />
@@ -74,7 +70,6 @@ const Content = () => {
             setQuiz3Data={setQuiz3Data}
             isLoading={isLoading}
             trans={t}
-
           />
           <ContentSec
             quiz={quizdata}
@@ -87,6 +82,7 @@ const Content = () => {
             data_len={data.length}
             index={currentIndex}
             trans={t}
+             // Add this prop to indicate the button should be shown
           />
       </HStack>
       {currentIndex <= data.length - 1 && <ChatWidget />}
