@@ -40,9 +40,9 @@ def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, pref
 
         classrooms = {classrooms}  
         labs = {labs}  
-        theory_requirements = {theory_requirements}  
-        lab_requirements = {lab_requirements}  
-  
+        theory subjects are = {theory_requirements}  
+        Lab subjects are = {lab_requirements}  
+
 
         4. **College Timings**  
         - The start and end times of the academic day.  
@@ -96,7 +96,7 @@ def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, pref
 
     
     response = client.models.generate_content(
-        model="gemini-2.5-pro-exp-03-25",
+        model="gemini-2.0-flash",
         contents=prompt,
         config={
             'response_mime_type': 'application/json',
@@ -108,7 +108,7 @@ def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, pref
 
 
 def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
-    output_folder = "./timetables_output"
+    output_folder = "\\timetables_output"
 
     # Create the folder if it doesn't exist
     if not os.path.exists(output_folder):
@@ -186,6 +186,13 @@ def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
                     row.append("")
             table_data[day] = row
         
+        # Ensure the number of time slot headers matches the number of columns in table_data
+        max_columns = max(len(row) for row in table_data.values())
+        if len(time_slots) > max_columns:
+            time_slots = time_slots[:max_columns]
+        elif len(time_slots) < max_columns:
+            time_slots.extend([f"Slot {i+1}" for i in range(len(time_slots), max_columns)])
+
         # Create DataFrame: rows = days, columns = computed time slots
         df = pd.DataFrame.from_dict(table_data, orient="index", columns=time_slots)
         df.index.name = "Day"
@@ -225,7 +232,11 @@ def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
         classes_grouped[class_name][day] = slots  # each slot is expected to be [Classroom, Teacher, Subject]
     
     for class_name, day_slots in classes_grouped.items():
-        num_slots = max((len(slots) for slots in day_slots.values()), default=0)
+        time_format = "%H:%M"
+        start_dt = datetime.strptime(start_time, time_format)
+        end_dt = datetime.strptime(end_time, time_format)
+        num_slots = int((end_dt - start_dt).total_seconds() // 3600)
+        
         if num_slots == 0:
             continue
         
@@ -251,7 +262,15 @@ def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
                     row.append("")
 
             table_data[day] = row
-            
+        
+        # Ensure the number of time slot headers matches the number of columns in table_data
+        max_columns = max(len(row) for row in table_data.values())
+        if len(time_slots) > max_columns:
+            time_slots = time_slots[:max_columns]
+        elif len(time_slots) < max_columns:
+            time_slots.extend([f"Slot {i+1}" for i in range(len(time_slots), max_columns)])
+
+        
         df = pd.DataFrame.from_dict(table_data, orient="index", columns=time_slots)
         df.index.name = "Day"
         
