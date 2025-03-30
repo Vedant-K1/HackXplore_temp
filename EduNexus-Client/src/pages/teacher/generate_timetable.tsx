@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Box,
   Button,
@@ -12,11 +11,11 @@ import {
   RadioGroup,
   VStack,
   Select,
-  Spinner,
+  Checkbox,
+  Stack,
 } from "@chakra-ui/react";
 import { DeleteIcon } from "@chakra-ui/icons";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
-import { Navbar } from "../../components/navbar";
 
 interface SubjectData {
   subjectName: string;
@@ -57,14 +56,14 @@ interface TeacherFormProps {
   watch: any;
 }
 
-function TeacherForm({
-  teacherIndex,
-  control,
-  register,
-  removeTeacher,
-  labs,
+function TeacherForm({ 
+  teacherIndex, 
+  control, 
+  register, 
+  removeTeacher, 
+  labs, 
   classes,
-  watch,
+  watch 
 }: TeacherFormProps) {
   const {
     fields: subjectFields,
@@ -142,7 +141,7 @@ function TeacherForm({
                 onClick={() => removeSubject(subjectIndex)}
               />
             </HStack>
-
+            
             <HStack spacing={4} align="start">
               <FormControl as="fieldset">
                 <FormLabel as="legend">Type:</FormLabel>
@@ -159,26 +158,26 @@ function TeacherForm({
                   )}
                 />
               </FormControl>
-
-              {watchSubjects &&
-                watchSubjects[subjectIndex]?.mode === "practical" && (
-                  <FormControl>
-                    <FormLabel>Lab Requirement:</FormLabel>
-                    <Select
-                      placeholder="Select lab"
-                      {...register(
-                        `teachers.${teacherIndex}.subjects.${subjectIndex}.labRequirement` as const
-                      )}
-                    >
-                      {labs.map((lab) => (
-                        <option key={lab} value={lab}>
-                          {lab}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-
+              
+              {watchSubjects && 
+               watchSubjects[subjectIndex]?.mode === "practical" && (
+                <FormControl>
+                  <FormLabel>Lab Requirement:</FormLabel>
+                  <Select
+                    placeholder="Select lab"
+                    {...register(
+                      `teachers.${teacherIndex}.subjects.${subjectIndex}.labRequirement` as const
+                    )}
+                  >
+                    {labs.map((lab) => (
+                      <option key={lab} value={lab}>
+                        {lab}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              
               <FormControl>
                 <FormLabel>Assign to Class:</FormLabel>
                 <Select
@@ -277,12 +276,12 @@ export default function TimetableForm() {
     },
   });
 
-  // Loading state for the generate button
-  const [loading, setLoading] = useState(false);
-
   const watchLabs = watch("labs", "");
   const labsArray = watchLabs
-    ? watchLabs.split(",").map((s) => s.trim()).filter((s) => s)
+    ? watchLabs
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s)
     : [];
 
   const {
@@ -304,9 +303,91 @@ export default function TimetableForm() {
   });
 
   const onSubmit = async (data: TimetableFormData) => {
-    // Transform form data to backend expected format (omitted for brevity)
-    // ...
-    setLoading(true);
+    // Transform form data to backend expected format:
+    const teachers_subjects: { [teacher: string]: string[] } = {};
+    const class_subjects: { [className: string]: string[] } = {};
+    const hours_per_week: { [subject: string]: number } = {};
+    const preferred_slots: { [teacher: string]: string } = {};
+    const lab_requirements: { [subject: string]: string } = {};
+    const theory_requirements: string[] = [];
+
+    // Process teachers and their subjects
+    data.teachers.forEach((teacher) => {
+      if (teacher.teacherName.trim() !== "") {
+        const subjectNames: string[] = [];
+        
+        teacher.subjects.forEach((subject) => {
+          if (subject.subjectName.trim() !== "") {
+            subjectNames.push(subject.subjectName);
+            
+            const hours = parseFloat(subject.hoursPerWeek);
+            if (!isNaN(hours)) {
+              hours_per_week[subject.subjectName] = hours;
+            }
+            
+            // Add to theory requirements if it's a theory subject
+            if (subject.mode === "theory") {
+              if (!theory_requirements.includes(subject.subjectName)) {
+                theory_requirements.push(subject.subjectName);
+              }
+            }
+            
+            // Add lab requirements if it's a practical subject
+            if (subject.mode === "practical" && subject.labRequirement) {
+              lab_requirements[subject.subjectName] = subject.labRequirement;
+            }
+            
+            // Add subject to class
+            if (subject.classAssignment && subject.classAssignment.trim() !== "") {
+              if (!class_subjects[subject.classAssignment]) {
+                class_subjects[subject.classAssignment] = [];
+              }
+              if (!class_subjects[subject.classAssignment].includes(subject.subjectName)) {
+                class_subjects[subject.classAssignment].push(subject.subjectName);
+              }
+            }
+          }
+        });
+        
+        teachers_subjects[teacher.teacherName] = subjectNames;
+        if (teacher.preferredSlot.trim() !== "") {
+          preferred_slots[teacher.teacherName] = teacher.preferredSlot;
+        }
+      }
+    });
+
+    // Process classes
+    data.classes.forEach((cls) => {
+      if (cls.className.trim() !== "" && !class_subjects[cls.className]) {
+        class_subjects[cls.className] = [];
+      }
+    });
+
+    // Convert comma-separated strings to arrays:
+    const classrooms = data.classrooms
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
+      
+    const labs = data.labs
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
+
+    const payload = {
+      teachers_subjects,
+      class_subjects,
+      hours_per_week,
+      preferred_slots,
+      classrooms,
+      labs,
+      lab_requirements,
+      theory_requirements,
+      start_time: data.start_time,
+      end_time: data.end_time,
+    };
+
+    console.log(payload);
 
     try {
       const response = await fetch("/api/teacher/timetable", {
@@ -314,7 +395,7 @@ export default function TimetableForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -333,119 +414,117 @@ export default function TimetableForm() {
     } catch (error) {
       console.error("Error:", error);
     }
-    setLoading(false);
   };
 
   return (
-    <div>
-      <Navbar />
-      <Box p={6} maxW="5xl" mx="auto" bg="white" boxShadow="md" borderRadius="lg">
-        <Heading as="h2" size="xl" mb={6}>
-          Timetable Scheduling Form
-        </Heading>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <VStack spacing={6} align="stretch">
-            {/* Start and End Times */}
-            <HStack spacing={4}>
-              <FormControl id="start_time">
-                <FormLabel>Start Time:</FormLabel>
-                <Input type="time" {...register("start_time")} />
-              </FormControl>
-              <FormControl id="end_time">
-                <FormLabel>End Time:</FormLabel>
-                <Input type="time" {...register("end_time")} />
-              </FormControl>
-            </HStack>
+    <Box p={6} maxW="5xl" mx="auto" bg="white" boxShadow="md" borderRadius="lg">
+      <Heading as="h2" size="xl" mb={6}>
+        Timetable Scheduling Form
+      </Heading>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <VStack spacing={6} align="stretch">
+          {/* Start and End Times */}
+          <HStack spacing={4}>
+            <FormControl id="start_time">
+              <FormLabel>Start Time:</FormLabel>
+              <Input type="time" {...register("start_time")} />
+            </FormControl>
+            <FormControl id="end_time">
+              <FormLabel>End Time:</FormLabel>
+              <Input type="time" {...register("end_time")} />
+            </FormControl>
+          </HStack>
 
-            {/* Classrooms and Labs */}
-            <HStack spacing={4}>
-              <FormControl id="classrooms">
-                <FormLabel>Classrooms (comma-separated):</FormLabel>
-                <Input type="text" placeholder="43, 42" {...register("classrooms")} />
-              </FormControl>
-              <FormControl id="labs">
-                <FormLabel>Labs (comma-separated):</FormLabel>
-                <Input type="text" placeholder="Lab1, Lab2" {...register("labs")} />
-              </FormControl>
-            </HStack>
+          {/* Classrooms and Labs */}
+          <HStack spacing={4}>
+            <FormControl id="classrooms">
+              <FormLabel>Classrooms (comma-separated):</FormLabel>
+              <Input
+                type="text"
+                placeholder="43, 42"
+                {...register("classrooms")}
+              />
+            </FormControl>
+            <FormControl id="labs">
+              <FormLabel>Labs (comma-separated):</FormLabel>
+              <Input type="text" placeholder="Lab1, Lab2" {...register("labs")} />
+            </FormControl>
+          </HStack>
 
-            {/* Classes Section */}
-            <Box>
-              <Heading as="h3" size="lg" mb={4}>
-                Classes
-              </Heading>
-              <VStack spacing={6} align="stretch">
-                {classFields.map((cls, index) => (
-                  <ClassForm
-                    key={cls.id}
-                    classIndex={index}
-                    control={control}
-                    register={register}
-                    removeClass={removeClass}
-                  />
-                ))}
-                <Button
-                  colorScheme="purple"
-                  onClick={() =>
-                    appendClass({
-                      className: "",
-                      subjects: [],
-                    })
-                  }
-                >
-                  Add Class
-                </Button>
-              </VStack>
-            </Box>
+          {/* Classes Section */}
+          <Box>
+            <Heading as="h3" size="lg" mb={4}>
+              Classes
+            </Heading>
+            <VStack spacing={6} align="stretch">
+              {classFields.map((cls, index) => (
+                <ClassForm
+                  key={cls.id}
+                  classIndex={index}
+                  control={control}
+                  register={register}
+                  removeClass={removeClass}
+                />
+              ))}
+              <Button
+                colorScheme="purple"
+                onClick={() =>
+                  appendClass({
+                    className: "",
+                    subjects: [],
+                  })
+                }
+              >
+                Add Class
+              </Button>
+            </VStack>
+          </Box>
 
-            {/* Teachers Section */}
-            <Box>
-              <Heading as="h3" size="lg" mb={4}>
-                Teachers
-              </Heading>
-              <VStack spacing={6} align="stretch">
-                {teacherFields.map((teacher, index) => (
-                  <TeacherForm
-                    key={teacher.id}
-                    teacherIndex={index}
-                    control={control}
-                    register={register}
-                    removeTeacher={removeTeacher}
-                    labs={labsArray}
-                    // Use live watch of classes so changes reflect immediately
-                    classes={watch("classes")}
-                    watch={watch}
-                  />
-                ))}
-                <Button
-                  colorScheme="blue"
-                  onClick={() =>
-                    appendTeacher({
-                      teacherName: "",
-                      preferredSlot: "",
-                      subjects: [
-                        {
-                          subjectName: "",
-                          hoursPerWeek: "",
-                          mode: "theory",
-                          isTheory: true,
-                        },
-                      ],
-                    })
-                  }
-                >
-                  Add Teacher
-                </Button>
-              </VStack>
-            </Box>
+          {/* Teachers Section */}
+          <Box>
+            <Heading as="h3" size="lg" mb={4}>
+              Teachers
+            </Heading>
+            <VStack spacing={6} align="stretch">
+              {teacherFields.map((teacher, index) => (
+                <TeacherForm
+                  key={teacher.id}
+                  teacherIndex={index}
+                  control={control}
+                  register={register}
+                  removeTeacher={removeTeacher}
+                  labs={labsArray}
+                  classes={classFields.map(field => field as unknown as ClassData)}
+                  watch={watch}
+                />
+              ))}
+              <Button
+                colorScheme="blue"
+                onClick={() =>
+                  appendTeacher({
+                    teacherName: "",
+                    preferredSlot: "",
+                    subjects: [
+                      {
+                        subjectName: "",
+                        hoursPerWeek: "",
+                        mode: "theory",
+                        isTheory: true,
+                      },
+                    ],
+                  })
+                }
+              >
+                Add Teacher
+              </Button>
+            </VStack>
+          </Box>
 
-            {/* Generate Button with Loading Indicator */}
-            <Button type="submit" colorScheme="green" size="lg" isDisabled={loading}>
-              {loading ? <Spinner size="sm" mr={2} /> : "Generate Timetable"}
-            </Button>
-          </VStack>
-        </form>
-      </Box>
-    </div>
+          <Button type="submit" colorScheme="green" size="lg">
+            Generate Timetable
+          </Button>
+        </VStack>
+      </form>
+    </Box>
   );
 }
