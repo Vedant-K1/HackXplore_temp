@@ -221,7 +221,8 @@ function ViewProjectStudent() {
                 const data: ProjectDetailsResponse = await response.json();
                 console.log("ddd",data)
                 if (data.response && data.project && data.github_PAT && data.github_id) {
-                    if (data.project.project_name !== projectName) {
+                    console.log("heree",data.github_PAT)
+                    if (data.project !== projectName) {
                          console.warn("Project name mismatch between request and response.");
                          // Decide how to handle this - maybe trust the response?
                     }
