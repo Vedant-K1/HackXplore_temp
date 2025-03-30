@@ -27,6 +27,7 @@ import {
 } from '@chakra-ui/react';
 import axios from 'axios';
 import { FaCalendarAlt, FaBook, FaFileUpload } from 'react-icons/fa';
+import { Navbar } from '../components/navbar';
 
 const AssignmentsDashboard = () => {
   // In a real application, you would get the student ID from your authentication context
@@ -169,11 +170,13 @@ const AssignmentsDashboard = () => {
   };
 
   return (
+    <>
+    <Navbar/>
     <ChakraProvider>
       <Container maxW="container.xl" py={8}>
         <VStack spacing={8} align="stretch">
           <Box textAlign="center">
-            <Heading>Student Dashboard</Heading>
+            <Heading>Assignment Dashboard</Heading>
             <Text mt={2} color="gray.600">View and submit your assignments</Text>
           </Box>
           
@@ -282,6 +285,7 @@ const AssignmentsDashboard = () => {
         </VStack>
       </Container>
     </ChakraProvider>
+    </>
   );
 };
 
