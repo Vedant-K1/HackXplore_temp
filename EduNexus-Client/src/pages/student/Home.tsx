@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { useSessionCheck } from "./home/useSessionCheck";
 import { NavLink } from 'react-router-dom';
 import ChatWidget from '../../components/ChatWidget';
+import StickyNote from '../../components/StickyNote';
 
 function Home() {
   useSessionCheck();

@@ -113,7 +113,6 @@ const Login = () => {
             <TabList>
               <Tab>Teacher</Tab>
               <Tab>Student</Tab>
-              <Tab>Job Seeker</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>

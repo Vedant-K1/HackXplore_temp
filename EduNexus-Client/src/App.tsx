@@ -22,7 +22,7 @@ import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
-import TimetableForm from "./pages/teacher/generate_timetable";
+import TimetableForm from "./pages/teacher/generate_timetable.tsx";
 function App() {
   return (
     <Routes>
