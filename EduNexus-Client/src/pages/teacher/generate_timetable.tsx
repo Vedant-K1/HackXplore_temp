@@ -16,6 +16,7 @@ import {
   } from "@chakra-ui/react";
   import { DeleteIcon } from "@chakra-ui/icons";
   import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { Navbar } from "../../components/navbar";
   
   interface SubjectData {
     subjectName: string;
@@ -417,6 +418,8 @@ import {
     };
   
     return (
+      <div>
+      <Navbar />
       <Box p={6} maxW="5xl" mx="auto" bg="white" boxShadow="md" borderRadius="lg">
         <Heading as="h2" size="xl" mb={6}>
           Timetable Scheduling Form
@@ -526,5 +529,6 @@ import {
           </VStack>
         </form>
       </Box>
-    );
+      </div>
+      );
   }
