@@ -782,7 +782,7 @@ def logout():
 #############------------------Code DIV Changes----------------##################
 
 from core.code_div import *
-
+import tempfile
 
 @teachers.route('/timetable', methods=['POST'])
 def generate_timetable_route():
@@ -818,3 +818,70 @@ def generate_timetable_route():
     excel_file = save_timetable_to_excel(timetable)
     return send_file(excel_file, as_attachment=True, download_name="timetable.xlsx")
 
+
+assignments_collection = db["assignments"] 
+
+# 1. Create Assignment (Teacher Side)
+@teachers.route('/create-assignment', methods=['POST'])
+def create_assignment():
+    data = request.json
+    assignment_name = data.get("assignment_name")
+    subject_name = data.get("subject_name")
+    details = data.get("details")
+    active = data.get("active", True)  # default to active
+
+    if not assignment_name or not subject_name:
+        return jsonify({"error": "Assignment name and subject name are required"}), 400
+
+    # Generate a unique assignment ID using uuid4
+    assignment_id = str(uuid.uuid4())
+
+    assignment = {
+        "assignment_id": assignment_id,
+        "assignment_name": assignment_name,
+        "subject_name": subject_name,
+        "details": details,
+        "active": active,
+        "created_at": datetime.datetime.utcnow(),
+        "evaluations": []  # To store student submissions
+    }
+
+    result = assignments_collection.insert_one(assignment)
+    return jsonify({
+        "message": "Assignment created successfully",
+        "assignment_id": assignment_id
+    })
+
+
+# 2. Fetch All Assignments (Teacher & Student)
+@teachers.route('/fetch-assignments', methods=['GET'])
+def fetch_assignments():
+    assignments = list(assignments_collection.find({}, {"_id": 0}))
+    return jsonify({"assignments": assignments})
+
+@teachers.route('/fetch-marks', methods=['GET'])
+def fetch_marks():
+    assignment_id = request.args.get("assignment_id")
+    if not assignment_id:
+        return jsonify({"error": "Assignment ID is required"}), 400
+
+    assignment = assignments_collection.find_one(
+        {"assignment_id": assignment_id},
+        {"evaluations": 1, "_id": 0}
+    )
+
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+
+    evaluations = assignment.get("evaluations", [])
+    # Format the evaluations with only the desired fields.
+    formatted_evaluations = []
+    for evaluation in evaluations:
+        formatted_evaluations.append({
+            "student_id": evaluation.get("student_id"),
+            "total_marks_obtained": evaluation.get("total_marks_obtained"),
+            "marks": evaluation.get("marks"),
+            "justification": evaluation.get("justification")
+        })
+
+    return jsonify({"evaluations": formatted_evaluations})

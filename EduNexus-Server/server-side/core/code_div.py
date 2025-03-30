@@ -4,9 +4,10 @@ from google import genai
 from datetime import datetime
 import os
 
+client = genai.Client(api_key="AIzaSyAl03NHDQ6gnXrXZKm_E3OiX7O-d8Bn_YQ")
 
 def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, preferred_slots, classrooms,labs, lab_requirements,theory_requirements, start_time, end_time):
-    client = genai.Client(api_key="AIzaSyAl03NHDQ6gnXrXZKm_E3OiX7O-d8Bn_YQ")
+    
 
     print("request sent")
     prompt = f"""
@@ -294,3 +295,80 @@ def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
     
     writer.close()
     return file_path
+
+import pathlib
+from google.genai import types
+
+
+
+def ass_eval(subject_name, details_from_teacher, doc):
+    prompt=f"""
+    You will be given a document containing responses to an assignment. Your task is to evaluate the answers. Each question is of 5 marks(Unless specified by the teacher), assign the marks for each question based on the following criteria:
+
+    1. **Accuracy & Relevance:** Does the answer correctly address the question?
+    2. **Depth & Understanding:** Does the answer demonstrate a clear grasp of the topic?
+    3. **Clarity & Coherence:** Is the response well-structured and easy to understand?
+    4. **Grammar & Presentation:** Are there any spelling, grammatical, or formatting errors?
+    5. **Handwriting:** Is the handwriting legible? (If the document is not handwritten, this criterion does not apply.)
+
+    For any marks deducted, provide a detailed, point-by-point explanation outlining why the marks were cut.
+
+     
+    The name of the subject is: {subject_name}
+    additional details from the teacher: {details_from_teacher}
+    
+    **Output Format:**
+    Return your evaluation in the following JSON format:
+    Example JSON Format
+    {{
+        "marks":[4,3,5,5,2.....],
+        "Justification: ["1. Deducted 1 mark for ...",
+        "2. Deducted 2 marks because the answer only partially addressed the question and lacked depth.",
+        "3. Full marks as the response is accurate and well explained.",
+        "4. Deducted 1 mark for ...",
+        "5. Deducted 2 marks due to illegible handwriting affecting clarity."]
+        "total_marks": 20,        
+    }}
+    """
+    filepath = pathlib.Path(doc)
+    
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[
+            prompt,
+            types.Part.from_bytes(
+                data=filepath.read_bytes(),
+                mime_type='application/pdf',
+                )
+            ],
+        config={
+            'response_mime_type': 'application/json',
+        },
+    )
+    print("response", response.text)
+    return response.text
+
+
+# Function to save the evaluation (PDF + details) to MongoDB
+def save_evaluation_to_mongo(pdf_file_path, evaluation_details, evaluations_collection):
+    """
+    Saves a PDF file and its evaluation details in the 'evaluations' collection.
+    
+    Parameters:
+      pdf_file_path (str): Local path to the PDF file.
+      evaluation_details (dict): Dictionary with evaluation details.
+    
+    Returns:
+      inserted_id: The ID of the inserted MongoDB document.
+    """
+    with open(pdf_file_path, "rb") as f:
+        pdf_data = f.read()
+    
+    document = {
+        "pdf": pdf_data,  # Store PDF data as binary
+        "evaluation_details": evaluation_details,
+        "created_at": datetime.utcnow()
+    }
+    
+    result = evaluations_collection.insert_one(document)
+    return result.inserted_id
