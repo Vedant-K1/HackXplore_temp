@@ -25,6 +25,7 @@ import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
 import TimetableForm from "./pages/teacher/generate_timetable.tsx";
 import CreateAssignment from "./pages/teacher/CreateAssignment.tsx";
 import Assignment from "./pages/Assignment.tsx";
+import Research from "./pages/teacher/research.tsx";
 function App() {
   return (
     <Routes>
@@ -42,6 +43,9 @@ function App() {
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
       <Route element={<LessonsGrid />} path="/teacher/scheduler" />
       <Route element={<TimetableForm />} path="/teacher/timetable" />
+      <Route element={<Research />} path="/teacher/research" />
+      <Route element={<Research />} path="/student/research" />
+      
       
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />

@@ -13,7 +13,7 @@ import {
     MenuItem,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher } from 'react-icons/fa';
+import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher, FaGithub } from 'react-icons/fa';
 import { RiAiGenerate } from "react-icons/ri";
 import { MdOutlineTravelExplore, MdCreateNewFolder, MdLogout } from "react-icons/md";
 import { Logo } from './icons';
@@ -132,10 +132,22 @@ export const Navbar = () => {
                                     <span>Create Assignment</span>
                                 </HStack>
                             </NavLink>
+                            <NavLink href="/teacher/research">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Research</span>
+                                </HStack>
+                            </NavLink>
                             <NavLink href="/teacher/timetable">
                                 <HStack spacing={2}>
                                     <MdCreateNewFolder size={24} />
                                     <span>Schedule Timetable</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/teacher/list-project">
+                                <HStack spacing={2}>
+                                    <FaGithub size={24} />
+                                    <span>Github Explorer</span>
                                 </HStack>
                             </NavLink>
                             <Box
@@ -168,7 +180,18 @@ export const Navbar = () => {
                                     <span>Assignments</span>
                                 </HStack>
                             </NavLink>
-
+                            <NavLink href="/student/research">
+                                <HStack spacing={2}>
+                                    <MdCreateNewFolder size={24} />
+                                    <span>Research</span>
+                                </HStack>
+                            </NavLink>
+                            <NavLink href="/student/list-project">
+                                <HStack spacing={2}>
+                                    <FaHome size={24} />
+                                    <span>Projects</span>
+                                </HStack>
+                            </NavLink>
                             <Menu>
                                 <MenuButton
                                     px={2}
