@@ -17,3 +17,8 @@ class Config():
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
     SESSION_PERMANENT = True
     SESSION_COOKIE_NAME = 'user_session'
+    
+    # BY ME DHRUVIL
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_HTTPONLY = True # Good practice, usually True by default
+    SESSION_COOKIE_SAMESITE = 'Lax' 
