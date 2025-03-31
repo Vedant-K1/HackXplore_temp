@@ -108,14 +108,14 @@ def register():
     session.modified = True
     print("SET",session.get("user_id"))
     response = jsonify({"message": "User created successfully", "user_info":user_info,"id":new_user.user_id, "email":new_user.email, "response":True}), 200
-    response.set_cookie(
-        'user_session',                           # Use your actual session cookie name
-        session.get('user_session'),              # Get actual session value
-        httponly=True,                       # Not accessible via JavaScript
-        secure=False,                        # Set to True in production with HTTPS
-        samesite='None',                     # Critical for cross-origin requests
-        max_age=60*60*24*7                   # 7 days in seconds
-    )
+    # response.set_cookie(
+    #     'user_session',                           # Use your actual session cookie name
+    #     session.get('user_session'),              # Get actual session value
+    #     httponly=True,                       # Not accessible via JavaScript
+    #     secure=False,                        # Set to True in production with HTTPS
+    #     samesite='None',                     # Critical for cross-origin requests
+    #     max_age=60*60*24*7                   # 7 days in seconds
+    # )
     return response
 
 # login route  --> add username to session and make it unique in user model
@@ -148,7 +148,11 @@ def login():
         "type": "student"
         # Add other fields if needed
     }
-    return jsonify({"message": "User logged in successfully", "email":user.email, "user_info":user_info,"response":True}), 200
+    response = jsonify({"message": "User logged in successfully", "email":user.email, "user_info":user_info,"response":True})
+    response.status_code = 200  # Set status code on the response object
+    # response.headers.add('Access-Control-Allow-Credentials', 'true')  # Now this works
+    response.headers.add('Vary', 'Origin')
+    return response
 
 @students.route('/user_profile', methods=['GET', 'POST'])
 @cross_origin(supports_credentials=True)
@@ -1343,6 +1347,10 @@ def student_access_chat():
 @students.route('/chats', methods=['GET'])
 # @cross_origin(supports_credentials=True)
 def student_fetch_chats():
+    print("-" * 20) # Separator for clarity
+    print(f"FLASK /chats - Incoming Request Headers: {request.headers}") # Print all headers
+    print(f"FLASK /chats - Incoming Cookies: {request.cookies}") # Print parsed cookies
+    print(f"FLASK /chats - Session BEFORE access: {dict(session)}") 
     user_id = session.get("user_id", None)
     # print("OOOOOOOOO",user_id)
     print("SET222",session.get("user_id"))

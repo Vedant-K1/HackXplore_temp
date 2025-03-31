@@ -19,6 +19,6 @@ class Config():
     SESSION_COOKIE_NAME = 'user_session'
     
     # BY ME DHRUVIL
-    SESSION_COOKIE_SECURE = False
-    SESSION_COOKIE_HTTPONLY = True # Good practice, usually True by default
-    SESSION_COOKIE_SAMESITE = 'Lax' 
+    # SESSION_COOKIE_SECURE = False
+    # SESSION_COOKIE_HTTPONLY = True # Good practice, usually True by default
+    # SESSION_COOKIE_SAMESITE = 'Lax' 

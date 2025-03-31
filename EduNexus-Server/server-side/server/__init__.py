@@ -15,13 +15,15 @@ def create_app():
     app = Flask(__name__)
 
     app.config.from_object(Config)
+    # print(f"SECRET_KEY Check: {app.config.get('SECRET_KEY')}") 
     # Important flask session configuration
     app.config['SESSION_COOKIE_SECURE'] = False  # Set to True only if using HTTPS
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Try 'None' if this doesn't work
     app.config['SESSION_COOKIE_DOMAIN'] = None  # Remove domain restriction
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # Session duration
-    app.secret_key = 'make-this-a-strong-secret-key'  # Very important!
+    # app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # Session duration
+    # app.secret_key = 'make-this-a-strong-secret-key'  # Very important!
+    app.config['SESSION_PERMANENT'] = True
 
     # Make sessions permanent by default
     @app.before_request
@@ -33,7 +35,7 @@ def create_app():
     CORS( app,
     origins=[REACT_APP_ORIGIN], # Exact origin
     supports_credentials=True, # <--- THIS IS CRITICAL for cookies
-    allow_headers=["Content-Type"], # Add others if needed
+    allow_headers=["Content-Type", "Authorization"], # Add others if needed
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
 
