@@ -109,7 +109,7 @@ def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, pref
 
 
 def save_timetable_to_excel(timetable, start_time="8:30", end_time="17:30"):
-    output_folder = "\\timetables_output"
+    output_folder = "/timetables_output"
 
     # Create the folder if it doesn't exist
     if not os.path.exists(output_folder):

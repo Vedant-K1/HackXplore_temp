@@ -2,6 +2,8 @@ from sqlalchemy.dialects.sqlite import JSON
 from server import db, bcrypt
 from datetime import datetime
 from pytz import timezone
+
+
 class Teacher(db.Model):
     __tablename__ = 'teachers'
     id = db.Column(db.Integer, primary_key=True)
@@ -20,22 +22,36 @@ class Teacher(db.Model):
     city = db.Column(db.String(50), nullable=False)
     gender = db.Column(db.String(50), nullable=False)
     age = db.Column(db.Integer, nullable=False)
-    date_joined = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone("Asia/Kolkata")))
+    date_joined = db.Column(db.DateTime, nullable=False,
+                            default=datetime.now(timezone("Asia/Kolkata")))
+    github_id = db.Column(db.String(50), nullable=False)
+    github_PAT = db.Column(db.String(150), nullable=False)
 
     def set_password(self, password):
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        self.password_hash = bcrypt.generate_password_hash(
+            password).decode('utf-8')
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+
+
+# class Projects(db.Model):
+#     __tablename__ = 'projects'
+#     id = db.Column(db.Integer, primary_key=True)
+#     project_name = db.Column(db.String(100), nullable=False)
+#     github_id = db.Column(db.String(50), db.ForeignKey('teachers.github_id'), nullable=False)
+
 
 class Course(db.Model):
     __tablename__ = 'courses'
     id = db.Column(db.Integer, primary_key=True)
     course_name = db.Column(db.String(200), nullable=False)
     num_of_lectures = db.Column(db.Integer, nullable=False)
-    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey(
+        'teachers.id'), nullable=False)
     lessons_data = db.Column(JSON, nullable=False)
     course_code = db.Column(db.String(20), unique=True, nullable=False)
+
 
 class Lesson(db.Model):
     __tablename__ = 'lessons'
@@ -44,14 +60,19 @@ class Lesson(db.Model):
     markdown_content = db.Column(db.Text, nullable=True)
     relevant_images = db.Column(JSON, nullable=True)
     uploaded_images = db.Column(JSON, nullable=True)
-    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'), nullable=False)
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey(
+        'teachers.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey(
+        'courses.id'), nullable=False)
+
 
 class LabManual(db.Model):
     __tablename__ = 'lab_manuals'
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
-    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey(
+        'courses.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey(
+        'teachers.id'), nullable=False)
     markdown_content = db.Column(db.Text, nullable=False)
     uploaded_images = db.Column(JSON, nullable=True)
     exp_aim = db.Column(db.Text, nullable=False)

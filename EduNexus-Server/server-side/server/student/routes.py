@@ -8,7 +8,7 @@ from gtts import gTTS
 from sqlalchemy import desc
 from deep_translator import GoogleTranslator
 from flask import request, session, jsonify, send_file, Blueprint
-from models.student_schema import User, Topic, Module, CompletedModule, Query, OngoingModule
+from models.student_schema import User, Topic, Module, CompletedModule, Query, OngoingModule,ProjectsStudent
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
@@ -33,6 +33,7 @@ teachers_collection = mongodb["teacher"]
 lessons_collection = mongodb["lessons"]
 courses_collection = mongodb["course"]
 lab_manuals_collection = mongodb["lab_manuals"]
+projects_collection = mongodb["projects"]
 
 @students.route('/register',methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -50,13 +51,15 @@ def register():
     course_name = request.form['course']
     interests = request.form['interest']
     student_id_file = request.files['collegeId']
+    github_id = request.form['github_id']
+    github_PAT = request.form['github_PAT']
     user_exists = User.query.filter_by(email=email).first() is not None
 
     if user_exists:
         return jsonify({"message": "User already exists", "response":False}), 201
     
     hash_pass = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(fname=fname, lname=lname, email=email, password=hash_pass, country=country, state=state, city=city, gender=gender, age=age, college_name=college_name, course_name=course_name, interests=interests, student_id=student_id_file.read())
+    new_user = User(fname=fname, lname=lname, email=email, password=hash_pass, country=country, state=state, city=city, gender=gender, age=age, college_name=college_name, course_name=course_name, interests=interests, student_id=student_id_file.read(),github_id=github_id,github_PAT=github_PAT)
     db.session.add(new_user)
     db.session.commit()
 
@@ -274,6 +277,109 @@ def delete():
 #         print(f"Translated submodule content: {trans_submodule_content}")
 
 #         return jsonify({"message": "Query successful", "images": module.image_urls, "content": trans_submodule_content, "response": True}), 200
+
+@students.route('/projects',methods=["POST"])
+def get_projects_list():
+    user_id = session.get('user_id')
+    print(session.get('user_id'))
+    if user_id is None:
+        return jsonify({"message": "User not logged in", "response":False}), 401
+    
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({"message": "User not found", "response":False}), 404
+    projects = list(ProjectsStudent.query.filter_by(github_id=user.github_id))
+    serialized_projects = []
+    for project in projects:
+        serialized_projects.append({
+            "id": project.id,
+            "project_name": project.project_name,
+            "github_id": project.github_id,
+            "owner_id":project.owner_id
+        })
+    
+    return jsonify({
+        "message": "Query successful", 
+        "projects": serialized_projects,
+        "response": True
+    }), 200
+    
+@students.route('/projects/<string:projectname>',methods=["POST"])
+def get_project(projectname):
+    user_id = session.get('user_id')
+    print(session.get('user_id'))
+    if user_id is None:
+        return jsonify({"message": "User not logged in", "response":False}), 401
+    
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({"message": "User not found", "response":False}), 404
+    owner = ProjectsStudent.query.filter_by(github_id=user.github_id, project_name=projectname).first()
+    print(user.github_id)
+    return jsonify({"message": "Query successful", "project":projectname,"github_id":owner.owner_id,"github_PAT":user.github_PAT, "response": True}), 200
+
+@students.route('/create_project', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def create_project():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return jsonify({"message": "User not logged in", "response":False}), 401
+    
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({"message": "User not found", "response":False}), 404
+    
+    data = request.json
+    project_name = data.get("project_name")
+    teachers_list = data.get("teachers_list",[])
+    students_list = data.get("students_list",[])
+
+    
+    if not project_name:
+        return jsonify({"message": "Project name is required", "response": False}), 400
+    current_user_github_id = user.github_id
+    print(current_user_github_id)
+    new_project = ProjectsStudent(
+            project_name=project_name,
+            github_id=user.github_id,
+            owner_id=user.github_id
+        )
+    db.session.add(new_project)
+    db.session.commit()
+        
+    
+    
+    for student_github_id in students_list:
+        user = User.query.get(github_id=student_github_id)
+        if not user :
+            return jsonify({"message": "Student not found", "response": False}), 400
+        new_project_student = ProjectsStudent(
+            project_name=project_name,
+            github_id=student_github_id,
+            owner_id=user.github_id
+        )
+        db.session.add(new_project_student)
+        db.session.commit()
+        
+    for teacher_github_id in teachers_list:
+        print(teacher_github_id,teachers_collection.find())
+        teacher = teachers_collection.find_one({"github_id": teacher_github_id})
+
+        if teacher :
+   
+            new_project_teacher = {
+                "project_name":project_name,
+                "github_id":teacher_github_id,
+                "owner_id":user.github_id
+            }
+
+            projects_collection.insert_one(new_project_teacher)
+        else:
+            return jsonify({"message": "Incorrect teacher github name", "response": False}), 400
+
+    
+    return jsonify({"message": "Project created successfully", "github_id":current_user_github_id ,"github_PAT":user.github_PAT,"response": True}), 201
+    
 
 @students.route('/query2/doc-upload/<string:topicname>/<string:level>/<string:source_lang>',methods=['POST'])
 def doc_query_topic(topicname,level,source_lang):

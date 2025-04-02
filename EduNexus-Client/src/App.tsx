@@ -19,6 +19,17 @@ import "./pages/student/content/i18n"
 import LessonsGrid from "./pages/teacher/scheduler";
 import Studentscheduler from "./pages/student/Studentscheduler";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import GitHubRepoExplorer from "./pages/teacher/Github";
+
+
+import CreateProject from "./pages/teacher/projects/CreateProject";
+import ProjectList from "./pages/teacher/projects/ProjectList";
+import ViewProject from "./pages/teacher/projects/ViewProject";
+
+import CreateProjectStudent from "./pages/student/projects/CreateProject";
+import ProjectListStudent from "./pages/student/projects/ProjectList";
+import ViewProjectStudent from "./pages/student/projects/ViewProject";
+
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
@@ -36,6 +47,11 @@ function App() {
       <Route element={<HomePage />} path="/" />
       <Route element={<TeacherDashboard />} path="/teacher/dashboard" />
       <Route element={<CourseCreate />} path="/teacher/create-course" />
+      <Route element={<GitHubRepoExplorer />} path="/teacher/projects" />
+      <Route element={<CreateProject />} path="/teacher/create-project" />
+      <Route element={<ProjectList />} path="/teacher/list-project" />
+      <Route path="/teacher/projects/view/:projectName" element={<ViewProject />} />
+
       <Route element={<LessonCreate />} path="/teacher/create-lesson" />
       <Route element={<CreateAssignment />} path="/teacher/create-assignment" />
       <Route element={<CoursePage />} path="/teacher/course" />
@@ -58,6 +74,10 @@ function App() {
       <Route element={<Content />} path="/student/content" />
       <Route element={<PerContent />} path="/student/shared-lesson" />
       <Route element={<StudentLabManual />} path="/student/shared-lab-manual" />
+
+      <Route element={<CreateProjectStudent />} path="/student/create-project" />
+      <Route element={<ProjectListStudent />} path="/student/list-project" />
+      <Route path="/student/projects/view/:projectName" element={<ViewProjectStudent />} />
     </Routes>
   );
 }

@@ -84,6 +84,8 @@ class User(db.Model):
     course_name = db.Column(db.String(50), nullable=False)
     student_id = db.Column(db.LargeBinary, nullable=False)
     date_joined = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone("Asia/Kolkata")))
+    github_id = db.Column(db.String(50), nullable=False)
+    github_PAT = db.Column(db.String(150), nullable=False)
 
     user_query_association = db.relationship('Query', back_populates='user')
     queries = association_proxy('user_query_association', 'topic')
@@ -100,6 +102,12 @@ class User(db.Model):
     def __repr__(self):
         return f'<User user_id={self.user_id} email={self.email}>'
 
+class ProjectsStudent(db.Model):
+    __tablename__ = 'ProjectsStudent'
+    id = db.Column(db.Integer, primary_key=True)
+    project_name = db.Column(db.String(100), nullable=False)
+    github_id = db.Column(db.String(50), db.ForeignKey('user.github_id'), nullable=False)
+    owner_id = db.Column(db.String(50), nullable=False)
 
 class Topic(db.Model):
     """Topics in the app."""

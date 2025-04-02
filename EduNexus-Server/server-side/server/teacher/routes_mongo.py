@@ -4,6 +4,7 @@ import random
 import secrets
 from io import BytesIO
 from server import db, bcrypt
+from models.student_schema import User, Topic, Module, CompletedModule, Query, OngoingModule, ProjectsStudent
 from datetime import datetime
 from gtts import gTTS
 from sqlalchemy import desc
@@ -28,13 +29,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
-uri = "mongodb+srv://ishashah2303:" + password +"@cluster0.mp52ofe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = "mongodb+srv://ishashah2303:" + password + \
+    "@cluster0.mp52ofe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
 mongodb = client["CodeDIV"]
 teachers_collection = mongodb["teacher"]
 lessons_collection = mongodb["lessons"]
 courses_collection = mongodb["course"]
 lab_manuals_collection = mongodb["lab_manuals"]
+projects_collection = mongodb["projects"]
+
 assignments_collection = mongodb["assignments"] 
 
 @teachers.route('/register', methods=['POST'])
@@ -54,6 +58,8 @@ def register():
     city = request.form.get('city')
     gender = request.form.get('gender')
     age = request.form.get('age')
+    github_id = request.form.get('github_id')
+    github_PAT = request.form.get('github_PAT')
 
     if not first_name or not last_name or not email or not password:
         return jsonify({"message": "First name, last name, email, and password are required."}), 400
@@ -77,18 +83,21 @@ def register():
         "city": city,
         "gender": gender,
         "age": age,
+        "github_id": github_id,
+        "github_PAT": github_PAT,
     }
 
     teachers_collection.insert_one(new_teacher)
 
     return jsonify({"message": "Registration successful!", "response": True}), 200
 
+
 @teachers.route('/login', methods=['POST'])
 def login():
-    data : dict = request.get_json()
+    data: dict = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    
+
     if not email or not password:
         return jsonify({"message": "Email and password are required."}), 400
 
@@ -100,6 +109,7 @@ def login():
     session['teacher_id'] = str(teacher["_id"])
     return jsonify({"message": "Login successful!", "teacher_id": str(teacher["_id"]), "response": True}), 200
 
+
 @teachers.route('/create-course', methods=['POST'])
 def create_course():
     teacher_id = session.get('teacher_id')
@@ -110,7 +120,8 @@ def create_course():
         course_name = request.form['course_name']
         num_lectures = request.form['num_lectures']
         lessons = request.form['lessons']
-        course_code = ServerUtils.generate_course_code(courses_collection, length=6)
+        course_code = ServerUtils.generate_course_code(
+            courses_collection, length=6)
 
         new_course = {
             "course_name": course_name,
@@ -122,7 +133,7 @@ def create_course():
 
         result = courses_collection.insert_one(new_course)
 
-        session['course_id'] = str(result.inserted_id) 
+        session['course_id'] = str(result.inserted_id)
         session['lessons'] = lessons
 
         return jsonify({
@@ -133,7 +144,8 @@ def create_course():
 
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
-      
+
+
 @teachers.route('/get-courses', methods=['GET'])
 def get_courses():
     teacher_id = session.get('teacher_id')
@@ -141,7 +153,7 @@ def get_courses():
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
     courses = list(courses_collection.find({"teacher_id": teacher_id}))
-    
+
     courses_data = [
         {
             'id': str(course['_id']),
@@ -154,29 +166,32 @@ def get_courses():
     ]
     return jsonify({"courses": courses_data, "response": True}), 200
 
+
 @teachers.route('/fetch-lessons', methods=['POST'])
 def fetch_lessons():
     teacher_id = session.get('teacher_id')
     data = request.json
     course_id = data.get('course_id')
-    
+
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
     if course_id is None:
         return jsonify({"message": "Course ID not found in the request.", "response": False}), 400
 
-    course = courses_collection.find_one({"_id": ObjectId(course_id), "teacher_id": teacher_id})
+    course = courses_collection.find_one(
+        {"_id": ObjectId(course_id), "teacher_id": teacher_id})
 
     if course is None:
         return jsonify({"message": "Course not found for this teacher."}), 404
 
-    lessons_data : dict = json.loads(course.get("lessons_data", "{}"))
+    lessons_data: dict = json.loads(course.get("lessons_data", "{}"))
     lesson_statuses = []
     lesson_ids = []
 
     for lesson_title in lessons_data.keys():
-        existing_lesson = lessons_collection.find_one({"title": lesson_title, "course_id": course_id})
+        existing_lesson = lessons_collection.find_one(
+            {"title": lesson_title, "course_id": course_id})
         if existing_lesson:
             lesson_statuses.append("View")
             lesson_ids.append(str(existing_lesson["_id"]))
@@ -211,12 +226,13 @@ def fetch_lessons():
         "manual_ids": manual_ids
     }), 200
 
+
 @teachers.route('/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
-    
+
     if 'files[]' not in request.files:
         files = []
     else:
@@ -225,20 +241,20 @@ async def multimodal_rag_submodules():
     course_name = request.form['course_name']
     lesson_type = request.form.get('lesson_type', 'theoretical')
     include_images = request.form.get("includeImages", "false")
-    if include_images=="true":
-        include_images=True
+    if include_images == "true":
+        include_images = True
     else:
-        include_images=False
-    if lesson_name=="":
+        include_images = False
+    if lesson_name == "":
         raise Exception("lesson_name must be provided")
     description = request.form['description']
-    
+
     lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name)
     current_dir = os.path.dirname(__file__)
     uploads_path = os.path.join(current_dir, 'uploaded-documents', lesson_name)
     if not os.path.exists(uploads_path):
         os.makedirs(uploads_path)
-    
+
     for file in files:
         if file:
             filename = secure_filename(file.filename)
@@ -249,20 +265,20 @@ async def multimodal_rag_submodules():
         links_list = json.loads(links)
         print(f"\nLinks provided: {links_list}\n")
     search_web = request.form.get("search_web", "false")
-    if search_web=="true":
-        search_web=True
+    if search_web == "true":
+        search_web = True
     else:
-        search_web=False
+        search_web = False
     session['search_web'] = search_web
 
-    if len(files)>0 and len(links_list)>0:
-        session['input_type']='pdf_and_link'
-        print("\nInput: File + Links...\nLinks: ",links_list)
+    if len(files) > 0 and len(links_list) > 0:
+        session['input_type'] = 'pdf_and_link'
+        print("\nInput: File + Links...\nLinks: ", links_list)
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
             lesson_type=lesson_type,
-            documents_directory_path=uploads_path,  
+            documents_directory_path=uploads_path,
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
             clip_processor=CLIP_PROCESSOR,
@@ -271,14 +287,14 @@ async def multimodal_rag_submodules():
             links=links_list,
             include_images=include_images
         )
-    elif len(files)>0 and search_web:
-        session['input_type']='pdf_and_web'
+    elif len(files) > 0 and search_web:
+        session['input_type'] = 'pdf_and_web'
         print("\nInput: File + Web Search...\n")
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
             lesson_type=lesson_type,
-            documents_directory_path=uploads_path,  
+            documents_directory_path=uploads_path,
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
             clip_processor=CLIP_PROCESSOR,
@@ -287,14 +303,14 @@ async def multimodal_rag_submodules():
             links=links_list,
             include_images=include_images
         )
-    elif len(files)>0:
-        session['input_type']='pdf'
+    elif len(files) > 0:
+        session['input_type'] = 'pdf'
         print("\nInput: File only...\n")
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
             lesson_type=lesson_type,
-            documents_directory_path=uploads_path,  
+            documents_directory_path=uploads_path,
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
             clip_processor=CLIP_PROCESSOR,
@@ -302,14 +318,14 @@ async def multimodal_rag_submodules():
             input_type="pdf",
             include_images=include_images
         )
-    elif len(links_list)>0:
-        session['input_type']='link'
+    elif len(links_list) > 0:
+        session['input_type'] = 'link'
         print("\nInput: Links only...\nLinks: ", links_list)
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
             lesson_type=lesson_type,
-            documents_directory_path=uploads_path,  
+            documents_directory_path=uploads_path,
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
             clip_processor=CLIP_PROCESSOR,
@@ -319,15 +335,16 @@ async def multimodal_rag_submodules():
             include_images=include_images
         )
     elif search_web:
-        session['input_type']='web'
+        session['input_type'] = 'web'
         print("\nInput: Web Search only...\n")
-        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_web(lesson_name, course_name)
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_web(
+            lesson_name, course_name)
         session['lesson_name'] = lesson_name
         session['course_name'] = course_name
         session['lesson_type'] = lesson_type
         session['user_profile'] = description
         session['submodules'] = submodules
-        session['is_multimodal_rag']=False
+        session['is_multimodal_rag'] = False
         print("\nGenerated Submodules:\n", submodules)
         return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
     else:
@@ -343,27 +360,30 @@ async def multimodal_rag_submodules():
         return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
     text_vectorstore_path, image_vectorstore_path = await multimodal_rag.create_text_and_image_vectorstores()
-    
+
     session['text_vectorstore_path'] = text_vectorstore_path
     session['image_vectorstore_path'] = image_vectorstore_path
-    
-    VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
-    
+
+    VECTORDB_TEXTBOOK = FAISS.load_local(
+        text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
+
     if search_web:
         submodules = await SUB_MODULE_GENERATOR.generate_submodules_from_documents_and_web(module_name=lesson_name, course_name=course_name, vectordb=VECTORDB_TEXTBOOK)
     else:
-        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(lesson_name, VECTORDB_TEXTBOOK)
-        
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(
+            lesson_name, VECTORDB_TEXTBOOK)
+
     session['lesson_name'] = lesson_name
     session['course_name'] = course_name
     session['lesson_type'] = lesson_type
     session['user_profile'] = description
     session['submodules'] = submodules
-    session['document_directory_path'] = uploads_path 
+    session['document_directory_path'] = uploads_path
     session['is_multimodal_rag'] = True
-    session['include_images']=include_images
+    session['include_images'] = include_images
     print("\nGenerated Submodules:\n", submodules)
     return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
+
 
 @teachers.route('/update-submodules', methods=['POST'])
 def update_submodules():
@@ -371,12 +391,13 @@ def update_submodules():
     session['submodules'] = updated_submodules
     return jsonify({'message': 'Submodules updated successfully'}), 200
 
+
 @teachers.route('/multimodal-rag-content', methods=['GET'])
 async def multimodal_rag_content():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
-    
+
     is_multimodal_rag = session.get("is_multimodal_rag")
     search_web = session.get("search_web")
     course_name = session.get("course_name")
@@ -385,11 +406,11 @@ async def multimodal_rag_content():
     user_profile = session.get("user_profile")
     submodules = session.get("submodules")
     if is_multimodal_rag:
-        document_paths = session.get("document_directory_path") 
+        document_paths = session.get("document_directory_path")
         text_vectorstore_path = session.get("text_vectorstore_path")
         image_vectorstore_path = session.get("image_vectorstore_path")
         input_type = session.get('input_type')
-        include_images=session.get('include_images')
+        include_images = session.get('include_images')
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             documents_directory_path=document_paths,
@@ -413,12 +434,17 @@ async def multimodal_rag_content():
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
-        submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
+        submodules_split_three = {
+            key: submodules[key] for key in keys_list[4:]}
         with ThreadPoolExecutor() as executor:
-            future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile, submodules_split_one, lesson_name, course_name, lesson_type, user_profile, 'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile, submodules_split_two, lesson_name, course_name, lesson_type, user_profile, 'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile, submodules_split_three, lesson_name, course_name, lesson_type, user_profile, 'third')
+            future_images_list = executor.submit(
+                SerperProvider.module_image_from_web, submodules)
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile,
+                                                 submodules_split_one, lesson_name, course_name, lesson_type, user_profile, 'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile,
+                                                 submodules_split_two, lesson_name, course_name, lesson_type, user_profile, 'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile,
+                                                   submodules_split_three, lesson_name, course_name, lesson_type, user_profile, 'third')
         content_one = future_content_one.result()
         content_two = future_content_two.result()
         content_three = future_content_three.result()
@@ -430,12 +456,17 @@ async def multimodal_rag_content():
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
-        submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
+        submodules_split_three = {
+            key: submodules[key] for key in keys_list[4:]}
         with ThreadPoolExecutor() as executor:
-            future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_with_profile, submodules_split_one, lesson_name, course_name, lesson_type, user_profile, 'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_with_profile, submodules_split_two, lesson_name, course_name, lesson_type, user_profile, 'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_with_profile, submodules_split_three, lesson_name, course_name, lesson_type, user_profile, 'third')
+            future_images_list = executor.submit(
+                SerperProvider.module_image_from_web, submodules)
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_with_profile,
+                                                 submodules_split_one, lesson_name, course_name, lesson_type, user_profile, 'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_with_profile,
+                                                 submodules_split_two, lesson_name, course_name, lesson_type, user_profile, 'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_with_profile,
+                                                   submodules_split_three, lesson_name, course_name, lesson_type, user_profile, 'third')
         content_one = future_content_one.result()
         content_two = future_content_two.result()
         content_three = future_content_three.result()
@@ -444,18 +475,114 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
 
+
+@teachers.route('/projects', methods=["POST"])
+def get_projects_list():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+    teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+    teacher_github_id = str(teacher["github_id"])
+    print(teacher_github_id)
+    projects = list(projects_collection.find(
+        {'github_id': str(teacher_github_id)}))
+    projects_list = []
+    for project in projects:
+        project['_id'] = str(project['_id'])
+        projects_list.append(project)
+
+    return jsonify({
+        "message": "Query successful",
+        "projects": projects_list,
+        "response": True
+    }), 200
+
+
+@teachers.route('/projects/<string:projectname>', methods=["POST"])
+def get_project(projectname):
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+    teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+    teacher_github_id = str(teacher["github_id"])
+    teacher_github_PAT = str(teacher["github_PAT"])
+    print(projectname)
+    project = projects_collection.find_one(
+        {"github_id": teacher_github_id, "project_name": projectname})
+    return jsonify({"message": "Query successful", "project": projectname, "github_PAT": teacher_github_PAT, "github_id": str(project["owner_id"]), "response": True}), 200
+
+
+@teachers.route('/create_project', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def create_project():
+    teacher_id = session.get('teacher_id')
+    print(teacher_id)
+    if teacher_id is None:
+        return jsonify({"message": "User not logged in", "response": False}), 401
+    teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+    teacher_github_id = str(teacher["github_id"])
+    current_teacher_github_id = teacher_github_id
+    teacher_github_PAT = str(teacher["github_PAT"])
+
+    data = request.json
+    project_name = data.get("project_name")
+    teachers_list = data.get("teachers_list", [])
+    students_list = data.get("students_list", [])
+
+    new_project_teacher = {
+        "project_name": project_name,
+        "github_id": teacher_github_id,
+        "owner_id": teacher_github_id,
+    }
+
+    projects_collection.insert_one(new_project_teacher)
+
+    if not project_name:
+        return jsonify({"message": "Project name is required", "response": False}), 400
+
+    for student_github_id in students_list:
+        user = User.query.filter_by(github_id=student_github_id).first()
+        if not user:
+            return jsonify({"message": "Student not found", "response": False}), 400
+        new_project_student = ProjectsStudent(
+            project_name=project_name,
+            github_id=student_github_id,
+            owner_id=teacher_github_id,
+        )
+        db.session.add(new_project_student)
+        db.session.commit()
+
+    for teacher_github_id in teachers_list:
+        teacher = teachers_collection.find_one(
+            {"github_id": teacher_github_id})
+
+        if teacher:
+
+            new_project_teacher = {
+                "project_name": project_name,
+                "github_id": teacher_github_id,
+                "owner_id": current_teacher_github_id
+            }
+
+            projects_collection.insert_one(new_project_teacher)
+        else:
+            return jsonify({"message": "Incorrect teacher github name", "response": False}), 400
+
+    return jsonify({"message": "Project created successfully", "github_id": current_teacher_github_id, "github_PAT": teacher_github_PAT, "response": True}), 201
+
+
 @teachers.route('/add-lesson', methods=['POST'])
 def add_lesson():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    data : dict = request.get_json()
+    data: dict = request.get_json()
     title = data.get('title')
     markdown_content = data.get('markdown_content', '')
     relevant_images = data.get('relevant_images', None)
     uploaded_images = data.get('uploaded_images', None)
-    markdown_images = data.get('markdown_images',None)
+    markdown_images = data.get('markdown_images', None)
     course_id = data.get('course_id')
     lesson_id = data.get('lesson_id', None)
 
@@ -463,10 +590,11 @@ def add_lesson():
         return jsonify({"message": "Course ID is required."}), 400
 
     if lesson_id:
-        lesson : dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+        lesson: dict = lessons_collection.find_one(
+            {"_id": ObjectId(lesson_id)})
         if not lesson or lesson.get("teacher_id") != teacher_id:
             return jsonify({"message": "Lesson not found or you do not have permission to edit it."}), 404
-        
+
         lessons_collection.update_one(
             {"_id": ObjectId(lesson_id)},
             {"$set": {
@@ -492,6 +620,7 @@ def add_lesson():
     lesson_id_to_return = lesson_id if lesson_id else new_lesson_id
     return jsonify({"message": "Lesson saved successfully!", "lesson_id": lesson_id_to_return, "response": True}), 200
 
+
 @teachers.route('/get-lesson', methods=['POST'])
 def get_lesson():
     data = request.get_json()
@@ -499,7 +628,7 @@ def get_lesson():
     if not lesson_id:
         return jsonify({"message": "Lesson ID is required."}), 400
 
-    lesson : dict = lessons_collection.find_one({"_id":ObjectId(lesson_id)})
+    lesson: dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
     if lesson is None:
         return jsonify({"message": "Lesson not found."}), 404
 
@@ -515,6 +644,7 @@ def get_lesson():
     }
 
     return jsonify(lesson_data), 200
+
 
 @teachers.route('/generate-lesson', methods=['POST'])
 async def generate_lesson():
@@ -540,8 +670,10 @@ async def generate_lesson():
     )
     await simple_rag.create_text_vectorstore()
     relevant_text = await simple_rag.search_similar_text(query=course_name, k=10)
-    output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, context=relevant_text, num_lectures=num_lectures)
+    output = LESSON_PLANNER.generate_lesson_plan(
+        course_name=course_name, context=relevant_text, num_lectures=num_lectures)
     return jsonify({"message": "Query successful", "lessons": output, "response": True}), 200
+
 
 @teachers.route('/generate-lab-manual', methods=['POST'])
 def generate_lab_manual():
@@ -554,15 +686,15 @@ def generate_lab_manual():
         return jsonify({"message": "Teacher not found", "response": False}), 404
 
     teacher_name = f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}"
-    data : dict= request.json
+    data: dict = request.json
     experiment_num = data.get('exp_num')
     exp_aim = data.get('exp_aim')
     course_name = data.get('course_name')
     include_videos = data.get('include_videos')
-    if include_videos=='true':
-        include_videos=True
+    if include_videos == 'true':
+        include_videos = True
     else:
-        include_videos=False
+        include_videos = False
     components = data.get('lab_components', [])
 
     result = LAB_MANUAL_GENERATOR.generate_lab_manual(
@@ -575,6 +707,7 @@ def generate_lab_manual():
     )
 
     return jsonify({"message": "Query successful", "MarkdownContent": result, "response": True}), 200
+
 
 @teachers.route('/create-lab-manual-docx', methods=['POST'])
 def convert_docx():
@@ -591,7 +724,7 @@ def convert_docx():
     from bson import ObjectId
     if not ObjectId.is_valid(lab_manual_id):
         return jsonify({"message": "Invalid lab manual ID", "response": False}), 400
-    
+
     lab_manual = lab_manuals_collection.find_one(
         {"_id": ObjectId(lab_manual_id), "teacher_id": teacher_id}
     )
@@ -610,8 +743,8 @@ def convert_docx():
     markdown = lab_manual.get('markdown_content', '')
     exp_num = lab_manual.get('exp_number', 'Unknown_Experiment')
     image_list = json.loads(lab_manual.get('markdown_images'))
-    doc = LabManualGenerator.convert_markdown_to_docx(input_file=markdown,course_name= course_name,exp_num= exp_num)
-
+    doc = LabManualGenerator.convert_markdown_to_docx(
+        input_file=markdown, course_name=course_name, exp_num=exp_num)
 
     return send_file(
         doc,
@@ -630,7 +763,7 @@ def add_lab_manual():
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    data : dict = request.get_json()
+    data: dict = request.get_json()
     course_id = data.get('course_id')
     exp_aim = data.get('exp_aim', '')
     exp_number = data.get('exp_num')
@@ -643,23 +776,24 @@ def add_lab_manual():
         return jsonify({"message": "Course ID,  are required."}), 400
 
     if lab_manual_id:
-        lab_manual : dict = lab_manuals_collection.find_one({"_id":ObjectId(lab_manual_id)})
+        lab_manual: dict = lab_manuals_collection.find_one(
+            {"_id": ObjectId(lab_manual_id)})
         if not lab_manual or lab_manual.get("teacher_id") != teacher_id:
             return jsonify({"message": "Lab manual not found or you do not have permission to edit it."}), 404
 
         lab_manuals_collection.update_one(
             {"_id": ObjectId(lab_manual_id)},
-            {"$set":{
+            {"$set": {
                 "markdown_content": markdown_content,
                 "markdown_images": json.dumps(markdown_images),
-                "uploaded_images":json.dumps(uploaded_images)
+                "uploaded_images": json.dumps(uploaded_images)
             }}
         )
     else:
         new_lab_manual = {
             "course_id": course_id,
-            "teacher_id":teacher_id,
-            "exp_aim":exp_aim,
+            "teacher_id": teacher_id,
+            "exp_aim": exp_aim,
             "exp_number": exp_number,
             "markdown_content": markdown_content,
             "markdown_images": json.dumps(markdown_images),
@@ -671,6 +805,7 @@ def add_lab_manual():
     lab_manual_id_to_return = lab_manual_id if lab_manual_id else new_lab_manual_id
     return jsonify({"message": "Lab manual saved successfully!", "lab_manual_id": lab_manual_id_to_return, "response": True}), 200
 
+
 @teachers.route('/fetch-lab-manual', methods=['POST'])
 def fetch_lab_manual():
     data = request.get_json()
@@ -679,7 +814,8 @@ def fetch_lab_manual():
     if not lab_manual_id:
         return jsonify({"message": "Lab manual ID is required."}), 400
 
-    lab_manual : dict = lab_manuals_collection.find_one({"_id":ObjectId(lab_manual_id)})
+    lab_manual: dict = lab_manuals_collection.find_one(
+        {"_id": ObjectId(lab_manual_id)})
 
     if lab_manual is None:
         return jsonify({"message": "Lab manual not found."}), 404
@@ -697,69 +833,75 @@ def fetch_lab_manual():
 
     return jsonify(lab_manual_data), 200
 
+
 @teachers.route('/download-ppt', methods=['POST'])
 def download_ppt():
     teacher_id = session.get("teacher_id")
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
-    
+
     try:
-        data : dict = request.get_json()
+        data: dict = request.get_json()
         lesson_id = data.get("lesson_id")
-        
+
         if not lesson_id:
             return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
-        
-        lesson : dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+
+        lesson: dict = lessons_collection.find_one(
+            {"_id": ObjectId(lesson_id)})
         if not lesson:
             return jsonify({"message": "Lesson not found.", "response": False}), 404
-        
+
         course_id = lesson.get("course_id")
-        course : dict = courses_collection.find_one({"_id": ObjectId(course_id)})
+        course: dict = courses_collection.find_one(
+            {"_id": ObjectId(course_id)})
         if not course:
             return jsonify({"message": "Course not found.", "response": False}), 404
-        
+
         course_name = course.get("course_name", "Default Course")
-        lesson_name = lesson.get("title", "Default Lesson") 
+        lesson_name = lesson.get("title", "Default Lesson")
         lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name) + ".pptx"
         markdown_list = ast.literal_eval(lesson.get("markdown_content", []))
         markdown_images_list = json.loads(lesson.get("markdown_images", []))
-        presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
+        presentation_content = PPT_GENERATOR.generate_ppt_content(
+            markdown_list=markdown_list)
         # ppt_gen = PPT_GENERATOR(presentation_content, course_name=course_name, lesson_name=lesson_name, markdown_images_list=markdown_images_list)
-        downloads_path=PPT_GENERATOR.generate_ppt(markdown_list=presentation_content, markdown_images_list=markdown_images_list, course_name=course_name, lesson_name=lesson_name)
-        
+        downloads_path = PPT_GENERATOR.generate_ppt(
+            markdown_list=presentation_content, markdown_images_list=markdown_images_list, course_name=course_name, lesson_name=lesson_name)
+
         return send_file(
             downloads_path,
             as_attachment=True,
         )
-    
+
     except Exception as e:
         print(f"Error while creating ppt: {e}")
         return jsonify({"message": "An error occurred while creating the presentation.", "response": False}), 500
+
 
 @teachers.route('/download-pdf', methods=['POST'])
 def download_pdf():
     teacher_id = session.get("teacher_id")
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
-    
+
     data = request.get_json()
     lesson_id = data.get("lesson_id")
-    
+
     if not lesson_id:
         return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
-    
+
     lesson = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
     if not lesson:
         return jsonify({"message": "Lesson not found.", "response": False}), 404
-    
+
     course_id = lesson.get("course_id")
     course = courses_collection.find_one({"_id": ObjectId(course_id)})
     if not course:
         return jsonify({"message": "Course not found.", "response": False}), 404
-    
+
     course_name = course.get("course_name", "Default Course")
-    lesson_name = lesson.get("title", "Default Lesson") 
+    lesson_name = lesson.get("title", "Default Lesson")
     lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name) + ".pdf"
     markdown_content = json.loads(lesson.get("markdown_content", "{}"))
     markdown_images = json.loads(lesson.get("markdown_images", "{}"))
@@ -768,8 +910,9 @@ def download_pdf():
     pdf_dir = os.path.dirname(pdf_path)
     if not os.path.exists(pdf_dir):
         os.makedirs(pdf_dir, exist_ok=True)
-    TEACHER_PDF_GENERATOR.generate_pdf(pdf_path, course_name, markdown_content,markdown_images)
-    
+    TEACHER_PDF_GENERATOR.generate_pdf(
+        pdf_path, course_name, markdown_content, markdown_images)
+
     return send_file(pdf_path, as_attachment=True)
 
 
@@ -777,7 +920,7 @@ def download_pdf():
 @cross_origin(supports_credentials=True)
 def logout():
     session.clear()
-    return jsonify({"message": "User logged out successfully", "response":True}), 200
+    return jsonify({"message": "User logged out successfully", "response": True}), 200
 
 
 #############------------------Code DIV Changes----------------##################

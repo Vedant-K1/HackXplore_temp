@@ -54,7 +54,7 @@ class DocumentUtils:
         print(f"Images extracted from all documents in {documents_directory} and saved to {output_directory_path}")
 
     @staticmethod
-    def embed_image_with_clip(image_path, clip_model, clip_processor, device_type="cpu"):
+    def embed_image_with_clip(image_path, clip_model, clip_processor, device_type=( "mps" if torch.backends.mps.is_available() else "cpu")):
         image = Image.open(image_path)
         inputs = clip_processor(images=image, return_tensors="pt").to(device_type)
         with torch.no_grad():
@@ -64,7 +64,7 @@ class DocumentUtils:
         return image_features_normalized
 
     @staticmethod
-    def embed_text_with_clip(text, clip_model, clip_tokenizer, device_type="cpu"):
+    def embed_text_with_clip(text, clip_model, clip_tokenizer, device_type= ("mps" if torch.backends.mps.is_available() else "cpu")):
         inputs = clip_tokenizer([text], return_tensors="pt").to(device_type)
         with torch.no_grad():
             text_features = clip_model.get_text_features(**inputs)

@@ -54,6 +54,8 @@ const form3Schema = yup.object().shape({
     .required("Phone number is required"),
   qualification: yup.string().required("Qualification is required"),
   subjects: yup.string().required("Subjects are required"),
+    github_id: yup.string().required('Github id is required'),
+    github_PAT: yup.string().required('Github PAT idst is required'),
 });
 
 
@@ -181,6 +183,18 @@ const Form3 = ({ register, errors }: { register: any; errors: any }) => {
         <Input placeholder="Subjects you teach" {...register("subjects")} />
         <FormErrorMessage>{errors.subjects && errors.subjects.message}</FormErrorMessage>
       </FormControl>
+
+      <FormControl isInvalid={!!errors.github_id} mb="4%">
+        <FormLabel>Github id</FormLabel>
+        <Input placeholder="Enter Github account name" {...register("github_id")} />
+        <FormErrorMessage>{errors.github_id && errors.github_id.message}</FormErrorMessage>
+      </FormControl>
+
+      <FormControl isInvalid={!!errors.github_PAT} mb="4%">
+        <FormLabel>Github PAT</FormLabel>
+        <Input placeholder="Enter Github Personal Access Token" {...register("github_PAT")} />
+        <FormErrorMessage>{errors.github_PAT && errors.github_PAT.message}</FormErrorMessage>
+      </FormControl>
     </>
   );
 };
@@ -217,6 +231,8 @@ const TeacherRegister = () => {
       formData.append('city', data.city);
       formData.append('gender', data.gender);
       formData.append('age', data.age);
+      formData.append('github_id', data.github_id);
+      formData.append('github_PAT', data.github_PAT);
 
       const response = await axios.post('/api/teacher/register', formData);
       if (response.data.response) {

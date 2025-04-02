@@ -51,6 +51,8 @@ const form2Schema = yup.object().shape({
   college: yup.string().required("College Name is required"),
   course: yup.string().required("Course Name is required"),
   interest: yup.string().required('Interest is required'),
+  github_id: yup.string().required('Github id is required'),
+  github_PAT: yup.string().required('Github PAT idst is required'),
 });
 
 const Form1 = ({ register, errors }: { register: any; errors: any }) => {
@@ -208,6 +210,36 @@ const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register
         </FormErrorMessage>
       </FormControl>
 
+      <FormControl isInvalid={!!errors.github_id} mb={4}>
+        <FormLabel htmlFor="github_id">Github id</FormLabel>
+        <Input
+          id="github_id"
+          name="github_id"
+          variant="outline"
+          colorScheme='purple'
+          {...register('github_id')}
+          placeholder="List your interests using commas"
+        />
+        <FormErrorMessage>
+          {errors.github_id && errors.github_id.message}
+        </FormErrorMessage>
+      </FormControl>
+
+      <FormControl isInvalid={!!errors.github_PAT} mb={4}>
+        <FormLabel htmlFor="github_PAT">Github PAT</FormLabel>
+        <Input
+          id="github_PAT"
+          name="github_PAT"
+          variant="outline"
+          colorScheme='purple'
+          {...register('github_PAT')}
+          placeholder="List your interests using commas"
+        />
+        <FormErrorMessage>
+          {errors.github_PAT && errors.github_PAT.message}
+        </FormErrorMessage>
+      </FormControl>
+
       <FormControl isInvalid={!!errors.collegeId} mb={4}>
         <FormLabel htmlFor="college-id">College ID</FormLabel>
         <InputGroup>
@@ -278,6 +310,8 @@ const StudentRegister = () => {
       formData.append('college', data.college);
       formData.append('course', data.course);
       formData.append('interest', data.interest);
+      formData.append('github_id', data.github_id);
+      formData.append('github_PAT', data.github_PAT);
 
       // Append college ID file
       if (collegeIdFile) {
