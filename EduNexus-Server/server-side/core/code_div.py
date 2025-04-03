@@ -372,3 +372,34 @@ def save_evaluation_to_mongo(pdf_file_path, evaluation_details, evaluations_coll
     
     result = evaluations_collection.insert_one(document)
     return result.inserted_id
+
+
+
+
+from serpapi import GoogleSearch
+from dotenv import load_dotenv
+load_dotenv()
+
+
+def GoogleScholarSearch(q: str):
+    params = {
+        "engine": "google_scholar",
+        "q": q,
+        "api_key": os.getenv("SERP_API_KEY")
+    }
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    # organic_results = results["organic_results"]
+    print("RETURN FROM TOOL=========================",results)
+    return results
+
+def generate_response(prompt):
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type='application/json',
+        )
+    )
+    return response.text
