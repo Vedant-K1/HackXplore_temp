@@ -10,7 +10,10 @@ from flask import request, session, jsonify, send_file, Blueprint
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
-socketio = SocketIO(cors_allowed_origins="http://localhost:5173")
+socketio = SocketIO(
+    cors_allowed_origins="*",  # More permissive for development
+      # Enable Engine.IO logging
+)
 
 def create_app():
     app = Flask(__name__)

@@ -10,6 +10,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:5000/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        ws: true, 
       },
       // '/student': {
       //   target: 'http://127.0.0.1:5000', // Your Flask server address

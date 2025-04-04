@@ -55,7 +55,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     let k
     if(user["user_info"]) k = user["user_info"]
     else k = user
-    socket = io(ENDPOINT);
+    socket = io(ENDPOINT, {
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
+    withCredentials: true
+  });
     socket.emit("setup", k);
     socket.on("connected", () => setSocketConnected(true));
     
