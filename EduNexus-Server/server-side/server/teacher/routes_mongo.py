@@ -1155,3 +1155,25 @@ def get_teacher_subject_news():
     except Exception as e:
         print(f"Error processing request: {str(e)}")
         return jsonify({"error": "An error occurred while processing your request"}), 500
+
+
+
+
+@teachers.route('/research-papers', methods=['POST'])
+def research_papers_endpoint():
+    data = request.json
+    
+    if not data or 'query' not in data:
+        return jsonify({"error": "No query provided"}), 400
+    
+    query = data['query']
+    max_papers = data.get('max_papers', 5)
+    days_back = data.get('days_back', 365)
+    
+    results = search_and_summarize_papers(
+        query=query,
+        max_papers=max_papers,
+        days_back=days_back
+    )
+    
+    return jsonify(results)
