@@ -25,12 +25,12 @@ export default defineConfig({
       //   secure: false,
       // },
        // You might also need to proxy socket.io if it connects to the same backend port
-       '/socket.io': {
-         target: 'ws://127.0.0.1:5000', // Use ws:// for websockets
-         ws: true, // IMPORTANT: Enable WebSocket proxying
-         changeOrigin: true,
-         secure: false,
-       }
+      //  '/socket.io': {
+      //    target: 'ws://127.0.0.1:5000', // Use ws:// for websockets
+      //    ws: true, // IMPORTANT: Enable WebSocket proxying
+      //    changeOrigin: true,
+      //    secure: false,
+      //  }
     },
   },
 })
