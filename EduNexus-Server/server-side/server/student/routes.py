@@ -1243,4 +1243,81 @@ def submit_assignment():
         "message": "Assignment submitted and evaluated successfully",
         "evaluation": evaluation_entry
     })
+
     
+    
+    
+# -------------------Research paper-------------------------
+
+from core.code_div import *
+
+
+research_collection = mongodb["research_papers_stud"]
+from bson import ObjectId
+
+@students.route('/research', methods=['POST'])
+def research_papers_endpoint():
+    student_id = session.get('user_id')  # Get student_id from session
+    data = request.json
+    
+    if not data or 'query' not in data:
+        return jsonify({"error": "No query provided"}), 400
+    
+    query = data['query']
+    max_papers = data.get('max_papers', 5)
+    days_back = data.get('days_back', 365)
+    
+    results = search_and_summarize_papers(
+        query=query,
+        max_papers=max_papers,
+        days_back=days_back
+    )
+    
+    # Add student_id to results before saving to MongoDB
+    results["student_id"] = student_id
+
+    # Insert into MongoDB
+    insert_result = research_collection.insert_one(results)
+
+    # Convert ObjectId to string for JSON serialization
+    results["_id"] = str(insert_result.inserted_id)
+
+    return jsonify(results)
+
+
+
+
+@students.route('/fetch-papers', methods=['GET'])
+def get_grouped_research_papers():
+    student_id = session.get('user_id')  # Get the logged-in teacher's ID
+
+    if not student_id:
+        return jsonify({"error": "Unauthorized access"}), 403  # Ensure teacher is logged in
+
+    # Aggregation pipeline to group papers by 'query'
+    pipeline = [
+        {"$match": {"student_id": student_id}},  # Filter by Student
+        {"$unwind": "$papers"},  # Flatten the papers array
+        {"$group": {
+            "_id": "$query",  # Group by query
+            "timestamp": {"$first": "$timestamp"},
+            "success": {"$first": "$success"},
+            "count": {"$sum": 1},  # Count number of papers in the group
+            "papers": {"$push": {
+                "_id": {"$toString": "$papers._id"},  # Convert ObjectId to string
+                "title": "$papers.title",
+                "authors": "$papers.authors",
+                "year": "$papers.year",
+                "url": "$papers.url",
+                "abstract": "$papers.abstract",
+                "summary": "$papers.summary",
+                "citations": "$papers.citations",
+                "venue": "$papers.venue"
+            }}
+        }},
+        {"$sort": {"timestamp": -1}}  # Sort by latest query timestamp
+    ]
+
+    grouped_papers = list(research_collection.aggregate(pipeline))
+
+    return jsonify(grouped_papers)

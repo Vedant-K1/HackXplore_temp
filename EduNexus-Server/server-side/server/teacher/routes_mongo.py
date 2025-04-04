@@ -926,7 +926,6 @@ def logout():
 #############------------------Code DIV Changes----------------##################
 
 from core.code_div import *
-import tempfile
 
 @teachers.route('/timetable', methods=['POST'])
 def generate_timetable_route():
