@@ -1033,31 +1033,31 @@ def fetch_marks():
 
 
 
-@teachers.route("/research", methods=["POST"])
-def search_route():
-    data = request.get_json()
-    query = data.get("query", "")
-    print(query)
-    docs = GoogleScholarSearch(query)
-    prompt = f"""
-You are a research assistant that will help in searching for related research papers to the topic provided. Answer the user query and use neccessary tools. Search on the topic: '{query}' and return only 6 best papers out of the ones that the tool provides.
+# @teachers.route("/research", methods=["POST"])
+# def search_route():
+#     data = request.get_json()
+#     query = data.get("query", "")
+#     print(query)
+#     docs = GoogleScholarSearch(query)
+#     prompt = f"""
+# You are a research assistant that will help in searching for related research papers to the topic provided. Answer the user query and use neccessary tools. Search on the topic: '{query}' and return only 6 best papers out of the ones that the tool provides.
 
-I am giving the google scholar documents related to the topic below:
-{docs}
+# I am giving the google scholar documents related to the topic below:
+# {docs}
 
----------------------
+# ---------------------
 
-The output should be strictly in this JSON format:
-{{
-    "paper name": "Name of the paper", {{
-        "link": "Web link/url of the paper",
-        "summary": "Summary of the paper / summary of the abstract"
-    }}
-    and other papers....
-}}
-"""
-    response = generate_response(prompt)
-    return jsonify({"response": response})
+# The output should be strictly in this JSON format:
+# {{
+#     "paper name": "Name of the paper", {{
+#         "link": "Web link/url of the paper",
+#         "summary": "Summary of the paper / summary of the abstract"
+#     }}
+#     and other papers....
+# }}
+# """
+#     response = generate_response(prompt)
+#     return jsonify({"response": response})
 
 
 #--------------------------News-------------------------------------
@@ -1159,7 +1159,7 @@ def get_teacher_subject_news():
 
 
 
-@teachers.route('/research-papers', methods=['POST'])
+@teachers.route('/research', methods=['POST'])
 def research_papers_endpoint():
     data = request.json
     
