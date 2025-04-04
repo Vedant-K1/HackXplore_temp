@@ -502,11 +502,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       borderWidth="1px">
             {isTyping ? (
               <div>
-                <Lottie
+                {/* BY ME DHRUVIL : COMMENTED OUT TYPING ANIMATION */}
+                {/* <Lottie
                   options={defaultOptions}
                   width={70}
                   style={{ marginLeft: "5px" }}
-                />
+                /> */}
               </div>
             ) : (
               ""

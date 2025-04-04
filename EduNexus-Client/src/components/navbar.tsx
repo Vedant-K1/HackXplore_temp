@@ -64,25 +64,25 @@ export const Navbar: React.FC<NavbarProps> = ({ isChat = false }) => {
     const [jobseekerAuthenticated, setJobSeekerAuthenticated] = useState(false);
 
 
-    const handleStudentLogout = async (clash=false) => {
+    const handleStudentLogout = async () => {
         try {
             await axios.get('/api/student/logout', { withCredentials: true });
             setStudentAuthenticated(false);
             sessionStorage.removeItem('student_authenticated');
             localStorage.clear();
-            if( !clash) navigate("/");
+            navigate("/");
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handleTeacherLogout = async (clash=false) => {
+    const handleTeacherLogout = async () => {
         try {
             await axios.get('/api/teacher/logout', { withCredentials: true });
             setTeacherAuthenticated(false);
             sessionStorage.removeItem('teacher_authenticated');
             localStorage.clear();
-            if( !clash) navigate("/");
+           navigate("/");
         } catch (error) {
             console.error(error);
         }
