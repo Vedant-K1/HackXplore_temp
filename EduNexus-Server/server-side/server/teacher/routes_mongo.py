@@ -1033,7 +1033,7 @@ def fetch_marks():
 
 
 
-@teachers.route("/search", methods=["POST"])
+@teachers.route("/research", methods=["POST"])
 def search_route():
     data = request.get_json()
     query = data.get("query", "")
