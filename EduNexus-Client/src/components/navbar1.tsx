@@ -104,60 +104,12 @@ export const Navbar = () => {
                     onClick={isOpen ? onClose : onOpen}
                 />
 
-                <Link textDecoration="none" _hover={{ color: 'black' }} href='/'>
-                    <HStack spacing={8} alignItems={'center'}>
-                        <Box display={"flex"}  >
-                            <Logo color='white' />
-                            <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="white">
-                                AcademIQ    
-                            </Box>
-                        </Box>
-                    </HStack>
-                </Link>
-
+                
 
                 <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
                     {teacherAuthenticated  && (
                         <>
-                            <NavLink href="/teacher/home">
-                                <HStack spacing={2}>
-                                    <FaHome size={24} />
-                                    <span>Home</span>
-                                </HStack>
-                            </NavLink>
-
-                            <NavLink href="/teacher/list-project">
-                                <HStack spacing={2}>
-                                    <FaGithub size={24} />
-                                    <span>Github Explorer</span>
-                                </HStack>
-                            </NavLink>
-
-                            <NavLink href="/teacher/create-course">
-                                <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Create Course</span>
-                                </HStack>
-                            </NavLink>
-                            <NavLink href="/teacher/create-assignment">
-                                <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Create Assignment</span>
-                                </HStack>
-                            </NavLink>
-                            <NavLink href="/teacher/research">
-                                <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Research</span>
-                                </HStack>
-                            </NavLink>
-                            <NavLink href="/teacher/timetable">
-                                <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Schedule Timetable</span>
-                                </HStack>
-                            </NavLink>
-                       
+                            
                             <Box
                                 px={2}
                                 py={1}

@@ -181,18 +181,14 @@ function TeacherForm({
               
               <FormControl>
                 <FormLabel>Assign to Class:</FormLabel>
-                <Select
-                  placeholder="Select class"
+                <Input
+                  type="text"
+                  placeholder="Class Name (e.g., TE, BE)"
                   {...register(
                     `teachers.${teacherIndex}.subjects.${subjectIndex}.classAssignment` as const
                   )}
-                >
-                  {classes.map((cls) => (
-                    <option key={cls.className} value={cls.className}>
-                      {cls.className}
-                    </option>
-                  ))}
-                </Select>
+                />
+                
               </FormControl>
             </HStack>
           </Box>
