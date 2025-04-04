@@ -114,7 +114,23 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
   );
 };
 
-const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register: any; errors: any; collegeIdFile: File | null; setCollegeIdFile: React.Dispatch<React.SetStateAction<File | null>> }) => {
+const Form2 = ({ 
+  register, 
+  errors, 
+  collegeIdFile, 
+  setCollegeIdFile, 
+  handlePicUpload,
+  pic,
+  picLoading 
+}: { 
+  register: any; 
+  errors: any; 
+  collegeIdFile: File | null; 
+  setCollegeIdFile: React.Dispatch<React.SetStateAction<File | null>>;
+  handlePicUpload: (file: File | null) => void;
+  pic: string;
+  picLoading: boolean;
+})  => {
 
   return (
     <>
@@ -266,6 +282,40 @@ const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register
             {collegeIdFile ? collegeIdFile.name : 'Upload College ID'}
           </Button>
         </InputGroup>
+
+        <FormControl mb={4}>
+        <FormLabel htmlFor="profile-pic">Profile Picture</FormLabel>
+        <InputGroup>
+          <input
+            id="profile-pic"
+            name="profile-pic"
+            type="file"
+            accept="image/jpeg, image/png"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                handlePicUpload(e.target.files[0]);
+              }
+            }}
+          />
+          <Button
+            onClick={() => (document.getElementById('profile-pic') as HTMLElement)?.click()}
+            variant="outline"
+            colorScheme="purple"
+            isLoading={picLoading}
+            isDisabled={picLoading}
+          >
+            {pic ? 'Picture Uploaded' : 'Upload Profile Picture'}
+          </Button>
+          {pic && (
+            <Text ml={2} fontSize="sm" color="green.500">
+              Image uploaded successfully
+            </Text>
+          )}
+        </InputGroup>
+        <FormHelperText>Please upload a JPEG or PNG image</FormHelperText>
+      </FormControl>
+
         <FormErrorMessage>
           {errors.collegeId && errors.collegeId.message}
         </FormErrorMessage>
@@ -281,8 +331,68 @@ const StudentRegister = () => {
   const [step, setStep] = useState(1);
   const [progress, setProgress] = useState(50);
   const [collegeIdFile, setCollegeIdFile] = useState<File | null>(null);
+  const [pic, setPic] = useState("");
+  const [picFile, setPicFile] = useState<File | null>(null);
+  const [picLoading, setPicLoading] = useState(false);
 
   const resolver: any = step === 1 ? yupResolver(form1Schema) : yupResolver(form2Schema);
+
+  const handlePicUpload = (file: File | null) => {
+    if (!file) return;
+    setPicLoading(true);
+    
+    if (file.type === "image/jpeg" || file.type === "image/png") {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("upload_preset", "Chat-App"); // Replace with your upload preset
+      data.append("cloud_name", "self-owned"); // Replace with your cloud name
+      
+      fetch("https://api.cloudinary.com/v1_1/self-owned/image/upload", { // Replace with your cloud name
+        method: "post",
+        body: data,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.url) {
+            setPic(data.url.toString());
+            setPicFile(file);
+            toast({
+              title: "Picture Uploaded!",
+              status: "success",
+              duration: 2000,
+              isClosable: true,
+            });
+          } else {
+            toast({
+              title: "Cloudinary Error",
+              description: data.error?.message || "Failed to upload image",
+              status: "error",
+              duration: 2000,
+              isClosable: true,
+            });
+          }
+          setPicLoading(false);
+        })
+        .catch((err) => {
+          console.error("Pic upload error:", err);
+          toast({
+            title: "Upload Failed (Network)",
+            status: "error",
+            duration: 2000,
+            isClosable: true,
+          });
+          setPicLoading(false);
+        });
+    } else {
+      toast({
+        title: "Please select JPG/PNG",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      setPicLoading(false);
+    }
+  };
 
   const {
     register,
@@ -312,6 +422,7 @@ const StudentRegister = () => {
       formData.append('interest', data.interest);
       formData.append('github_id', data.github_id);
       formData.append('github_PAT', data.github_PAT);
+      formData.append('pic', pic);
 
       // Append college ID file
       if (collegeIdFile) {
@@ -373,7 +484,9 @@ const StudentRegister = () => {
         <Progress colorScheme="purple" size="sm" value={progress} hasStripe mb="5%" mx="5%" isAnimated />
         <form onSubmit={handleSubmit(onSubmit)}>
           {step === 1 && <Form1 register={register} errors={errors} />}
-          {step === 2 && <Form2 register={register} errors={errors} collegeIdFile={collegeIdFile} setCollegeIdFile={setCollegeIdFile} />}
+          {step === 2 && <Form2 register={register} errors={errors} collegeIdFile={collegeIdFile} setCollegeIdFile={setCollegeIdFile} handlePicUpload={handlePicUpload}
+              pic={pic}
+              picLoading={picLoading}  />}
           <ButtonGroup mt="5%" w="100%">
             <Flex w="100%" justifyContent="space-between">
               <Flex>
@@ -406,10 +519,15 @@ const StudentRegister = () => {
                 )}
               </Flex>
               {step === 2 && (
-                <Button
-                  variant="outline"
-                  colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
-                  type="submit">Submit</Button>
+               <Button
+               variant="outline"
+               colorScheme="purple" 
+               _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
+               type="submit"
+               isLoading={picLoading}
+               isDisabled={picLoading}>
+               Submit
+             </Button>
               )}
             </Flex>
           </ButtonGroup>

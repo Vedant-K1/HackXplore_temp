@@ -28,6 +28,7 @@ from ..controllers.chat_controllers import access_chat, fetch_chats, create_grou
 from ..controllers.message_controllers import send_message, all_messages
 from sqlalchemy import or_
 
+
 students = Blueprint(name='students', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
 uri = "mongodb+srv://ishashah2303:" + password +"@cluster0.mp52ofe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -83,13 +84,13 @@ def register():
     github_id = request.form['github_id']
     github_PAT = request.form['github_PAT']
     user_exists = User.query.filter_by(email=email).first() is not None
-    pic_url = request.form['pic']
+    pic = request.form['pic']
 
     if user_exists:
         return jsonify({"message": "User already exists", "response":False}), 201
     
     hash_pass = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(fname=fname, lname=lname, email=email, password=hash_pass, country=country, state=state, city=city, gender=gender, age=age, college_name=college_name, course_name=course_name, interests=interests, student_id=student_id_file.read(),github_id=github_id,github_PAT=github_PAT,pic_url=pic_url if pic_url else "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+    new_user = User(fname=fname, lname=lname, email=email, password=hash_pass, country=country, state=state, city=city, gender=gender, age=age, college_name=college_name, course_name=course_name, interests=interests, student_id=student_id_file.read(),github_id=github_id,github_PAT=github_PAT,pic=pic if pic else "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
     db.session.add(new_user)
     db.session.commit()
     
@@ -107,7 +108,7 @@ def register():
     session["user_id"] = new_user.user_id # BY ME DHRUVIL
     session.modified = True
     print("SET",session.get("user_id"))
-    response = jsonify({"message": "User created successfully", "user_info":user_info,"id":new_user.user_id, "email":new_user.email, "response":True}), 200
+    response = jsonify({"message": "User created successfully", "user_info":user_info,"id":new_user.user_id, "email":new_user.email, "type": "student","response":True}), 200
     # response.set_cookie(
     #     'user_session',                           # Use your actual session cookie name
     #     session.get('user_session'),              # Get actual session value
@@ -148,7 +149,7 @@ def login():
         "type": "student"
         # Add other fields if needed
     }
-    response = jsonify({"message": "User logged in successfully", "email":user.email, "user_info":user_info,"response":True})
+    response = jsonify({"message": "User logged in successfully", "email":user.email, "type": "student","user_info":user_info,"id":user.user_id,"response":True})
     response.status_code = 200  # Set status code on the response object
     # response.headers.add('Access-Control-Allow-Credentials', 'true')  # Now this works
     response.headers.add('Vary', 'Origin')
@@ -1342,7 +1343,8 @@ def get_student_by_id(student_id):
 @students.route('/chats', methods=['POST'])
 # @cross_origin(supports_credentials=True)
 def student_access_chat():
-    return access_chat(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    user_id = session.get("user_id", None)
+    return access_chat(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
 
 @students.route('/chats', methods=['GET'])
 # @cross_origin(supports_credentials=True)
@@ -1359,32 +1361,38 @@ def student_fetch_chats():
 @students.route('/chats/group', methods=['POST'])
 @cross_origin(supports_credentials=True)
 def student_create_group_chat():
-    return create_group_chat(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    user_id = session.get("user_id", None)
+    return create_group_chat(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
 
 @students.route('/chats/rename', methods=['PUT'])
 @cross_origin(supports_credentials=True)
 def student_rename_group():
-    return rename_group(request, mongodb, is_teacher=False)
+    user_id = session.get("user_id", None)
+    return rename_group(request, mongodb, is_teacher=False,current_user_id=user_id)
 
 @students.route('/chats/groupadd', methods=['PUT'])
 @cross_origin(supports_credentials=True)
 def student_add_to_group():
-    return add_to_group(request, mongodb, is_teacher=False)
+    user_id = session.get("user_id", None)
+    return add_to_group(request, mongodb, is_teacher=False,current_user_id=user_id)
 
 @students.route('/chats/groupremove', methods=['PUT'])
 @cross_origin(supports_credentials=True)
 def student_remove_from_group():
-    return remove_from_group(request, mongodb, is_teacher=False)
+    user_id = session.get("user_id", None)
+    return remove_from_group(request, mongodb, is_teacher=False,current_user_id=user_id)
 
 @students.route('/messages', methods=['POST'])
 @cross_origin(supports_credentials=True)
 def student_send_message():
-    return send_message(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    user_id = session.get("user_id", None)
+    return send_message(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
 
 @students.route('/messages/<chat_id>', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def student_all_messages(chat_id):
-    return all_messages(chat_id, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    user_id = session.get("user_id", None)
+    return all_messages(chat_id, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
 
 # Add a route for searching users (teachers and students) for chat
 @students.route('/users/search', methods=['GET'])
@@ -1395,14 +1403,14 @@ def search_users():
         return jsonify([]), 200
     
     # Get current teacher ID
-    teacher_id = session.get('user_id')
-    if not teacher_id:
+    user_id = session.get('user_id')
+    if not user_id:
         return jsonify({"message": "Not logged in"}), 401
     
     # Search for teachers
     teacher_results = list(teachers_collection.find({
         "$and": [
-            {"_id": {"$ne": ObjectId(teacher_id)}},
+            # {"_id": {"$ne": ObjectId(teacher_id)}},
             {"$or": [
                 {"first_name": {"$regex": search_query, "$options": "i"}},
                 {"last_name": {"$regex": search_query, "$options": "i"}},
@@ -1418,7 +1426,10 @@ def search_users():
             User.lname.ilike(f'%{search_query}%'),
             User.email.ilike(f'%{search_query}%')
         )
-    ).all()
+        ).filter(
+            # Add the new AND condition to exclude the current user
+            User.user_id != user_id
+        ).all()
     
     # Format results
     formatted_results = []

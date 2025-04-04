@@ -15,7 +15,15 @@ import {
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
 import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher, FaGithub } from 'react-icons/fa';
 import { RiAiGenerate } from "react-icons/ri";
-import { MdOutlineTravelExplore, MdCreateNewFolder, MdLogout } from "react-icons/md";
+import { MdOutlineTravelExplore, MdCreateNewFolder, MdAssignment,MdAssignmentAdd,MdLogout } from "react-icons/md";
+import { GiArchiveResearch } from "react-icons/gi";
+import { PiProjectorScreenDuotone } from "react-icons/pi";
+import { MdOutlineCreate } from "react-icons/md";
+import { IoCreateOutline } from "react-icons/io5";
+
+import { BsChatDotsFill ,BsTable} from "react-icons/bs";
+
+
 import { Logo } from './icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -24,6 +32,11 @@ interface NavLinkProps {
     href: string;
     children: ReactNode;
 }
+
+interface NavbarProps {
+    isChat?: React.ReactNode | false;
+}
+
 
 const NavLink: React.FC<NavLinkProps> = ({ children, href }) => (
     <Link
@@ -42,7 +55,7 @@ const NavLink: React.FC<NavLinkProps> = ({ children, href }) => (
 );
 
 
-export const Navbar = () => {
+export const Navbar: React.FC<NavbarProps> = ({ isChat = false }) => {
     const navigate = useNavigate();
 
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -89,7 +102,9 @@ export const Navbar = () => {
 
     console.log(sessionStorage.getItem('student_authenticated') === 'true',sessionStorage.getItem('teacher_authenticated') === 'true',sessionStorage.getItem('job_seeker_authenticated') === 'true')
 
-   
+    const renderChatIcon = () => {
+        return isChat || <BsChatDotsFill size={24} />;
+    };
 
 
    
@@ -117,7 +132,7 @@ export const Navbar = () => {
 
 
                 <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
-                    {teacherAuthenticated  && (
+                {teacherAuthenticated  && (
                         <>
                             <NavLink href="/teacher/dashboard">
                                 <HStack spacing={2}>
@@ -128,33 +143,53 @@ export const Navbar = () => {
 
                             <NavLink href="/teacher/list-project">
                                 <HStack spacing={2}>
-                                    <FaGithub size={24} />
-                                    <span>Github Explorer</span>
+                                    <PiProjectorScreenDuotone size={24} />
+                                    <span>Projects</span>
                                 </HStack>
                             </NavLink>
 
-                            <NavLink href="/teacher/create-course">
+                            <NavLink href="/chats">
                                 <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Create Course</span>
+                                {renderChatIcon()}
+                                    <span>Chats</span>
                                 </HStack>
                             </NavLink>
-                            <NavLink href="/teacher/create-assignment">
-                                <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Create Assignment</span>
-                                </HStack>
-                            </NavLink>
+
+                            <Menu>
+                                <MenuButton
+                                    px={2}
+                                    py={1}
+                                    className="feature-heading"
+                                    rounded="md"
+                                    color={"white"}
+                                    _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none' }}
+                                    transition="transform 0.3s ease-in-out"
+                                >
+                                    <HStack spacing={2}>
+                                        <IoCreateOutline size={24} />
+                                        <span>Create</span>
+                                    </HStack>
+                                </MenuButton>
+                                <MenuList>
+                                    <MenuItem onClick={() => navigate("/teacher/create-course")}>
+                                        <MdCreateNewFolder size={20} style={{marginRight:8}}/>
+                                        <span>Course</span>
+                                    </MenuItem>
+                                    <MenuItem onClick={() => navigate("/teacher/create-assignment")}>
+                                        <MdAssignmentAdd size={20} style={{marginRight:8}}/>
+                                        <span>Assignment</span>
+                                    </MenuItem>
+                                    <MenuItem onClick={() => navigate("/teacher/timetable")}>
+                                        <BsTable size={20} style={{marginRight:8}}/>
+                                        <span>Schedule Timetable</span>
+                                    </MenuItem>
+                                </MenuList>
+                            </Menu>
+
                             <NavLink href="/teacher/research">
                                 <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
+                                    <GiArchiveResearch size={24} />
                                     <span>Research</span>
-                                </HStack>
-                            </NavLink>
-                            <NavLink href="/teacher/timetable">
-                                <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
-                                    <span>Schedule Timetable</span>
                                 </HStack>
                             </NavLink>
                        
@@ -185,19 +220,26 @@ export const Navbar = () => {
 
                             <NavLink href="/student/list-project">
                                 <HStack spacing={2}>
-                                    <FaHome size={24} />
+                                    <PiProjectorScreenDuotone size={24} />
                                     <span>Projects</span>
+                                </HStack>
+                            </NavLink>
+
+                            <NavLink href="/chats">
+                                <HStack spacing={2}>
+                                {renderChatIcon()}
+                                    <span>Chats</span>
                                 </HStack>
                             </NavLink>
                             <NavLink href="/student/assignment">
                                 <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
+                                    <MdAssignment size={24} />
                                     <span>Assignments</span>
                                 </HStack>
                             </NavLink>
                             <NavLink href="/student/research">
                                 <HStack spacing={2}>
-                                    <MdCreateNewFolder size={24} />
+                                    <GiArchiveResearch size={24} />
                                     <span>Research</span>
                                 </HStack>
                             </NavLink>

@@ -105,7 +105,7 @@ class User(db.Model):
                             default=datetime.now(timezone("Asia/Kolkata")))
     github_id = db.Column(db.String(50), nullable=False)
     github_PAT = db.Column(db.String(150), nullable=False)
-    pic_url = db.Column(db.String(550), nullable=False)
+    pic = db.Column(db.String(550), nullable=False)
 
     user_query_association = db.relationship('Query', back_populates='user')
     queries = association_proxy('user_query_association', 'topic')

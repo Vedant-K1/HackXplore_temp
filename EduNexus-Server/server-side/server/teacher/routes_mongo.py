@@ -91,7 +91,7 @@ def register():
     age = request.form.get('age')
     github_id = request.form.get('github_id')
     github_PAT = request.form.get('github_PAT')
-    pic_url = request.form.get('pic')
+    pic = request.form.get('pic')
 
     if not first_name or not last_name or not email or not password:
         return jsonify({"message": "First name, last name, email, and password are required."}), 400
@@ -117,7 +117,7 @@ def register():
         "age": age,
         "github_id": github_id,
         "github_PAT": github_PAT,
-        "pic": pic_url if pic_url else "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
+        "pic": pic if pic else "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
     }
 
     result = teachers_collection.insert_one(new_teacher)
@@ -131,7 +131,7 @@ def register():
             # Add other fields if needed by frontend immediately
         }
 
-    return jsonify({"message": "Registration successful!", "user_info":user_info,"response": True}), 200
+    return jsonify({"message": "Registration successful!", "teacher_id": str(new_teacher["_id"]),"user_info":user_info,"type": "teacher","response": True}), 200
 
 
 @teachers.route('/login', methods=['POST'])
@@ -147,8 +147,9 @@ def login():
 
     if teacher is None or not check_password_hash(teacher.get("password"), password):
         return jsonify({"message": "Invalid email or password."}), 401
-
+    session.permanent = True
     session['teacher_id'] = str(teacher["_id"])
+    session.modified = True
     user_info = {
         "_id": str(teacher["_id"]),
         "name": f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}",
@@ -157,7 +158,7 @@ def login():
         "type": "teacher"
         # Add other fields if needed by frontend
     }
-    return jsonify({"message": "Login successful!", "teacher_id": str(teacher["_id"]),"user_info":user_info ,"response": True}), 200
+    return jsonify({"message": "Login successful!", "teacher_id": str(teacher["_id"]),"user_info":user_info ,"type": "teacher","response": True}), 200
 
 
 @teachers.route('/create-course', methods=['POST'])
@@ -1106,35 +1107,47 @@ def get_student_by_id(student_id):
 # Add these routes to the teachers blueprint
 @teachers.route('/chats', methods=['POST'])
 def teacher_access_chat():
-    return access_chat(request, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    teacher_id = session.get("teacher_id", None)
+    print(f"FLASK /chats - Session BEFORE access: {dict(session)}") 
+    print(teacher_id)
+    return access_chat(request, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=teacher_id)
 
 @teachers.route('/chats', methods=['GET'])
 def teacher_fetch_chats():
-    return fetch_chats(mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    teacher_id = session.get("teacher_id", None)
+    print(f"FLASK /chats - Session BEFORE access: {dict(session)}") 
+    print(teacher_id)
+    return fetch_chats(mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=teacher_id)
 
 @teachers.route('/chats/group', methods=['POST'])
 def teacher_create_group_chat():
-    return create_group_chat(request, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    teacher_id = session.get("teacher_id", None)
+    return create_group_chat(request, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=teacher_id)
 
 @teachers.route('/chats/rename', methods=['PUT'])
 def teacher_rename_group():
-    return rename_group(request, mongodb, is_teacher=True)
+    teacher_id = session.get("teacher_id", None)
+    return rename_group(request, mongodb, is_teacher=True,current_user_id=teacher_id)
 
 @teachers.route('/chats/groupadd', methods=['PUT'])
 def teacher_add_to_group():
-    return add_to_group(request, mongodb, is_teacher=True)
+    teacher_id = session.get("teacher_id", None)
+    return add_to_group(request, mongodb, is_teacher=True,current_user_id=teacher_id)
 
 @teachers.route('/chats/groupremove', methods=['PUT'])
 def teacher_remove_from_group():
-    return remove_from_group(request, mongodb, is_teacher=True)
+    teacher_id = session.get("teacher_id", None)
+    return remove_from_group(request, mongodb, is_teacher=True,current_user_id=teacher_id)
 
 @teachers.route('/messages', methods=['POST'])
 def teacher_send_message():
-    return send_message(request, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    teacher_id = session.get("teacher_id", None)
+    return send_message(request, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=teacher_id)
 
 @teachers.route('/messages/<chat_id>', methods=['GET'])
 def teacher_all_messages(chat_id):
-    return all_messages(chat_id, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id)
+    teacher_id = session.get("teacher_id", None)
+    return all_messages(chat_id, mongodb, is_teacher=True, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=teacher_id)
 
 # Add a route for searching users (teachers and students) for chat
 @teachers.route('/users/search', methods=['GET'])
@@ -1144,7 +1157,7 @@ def search_users():
         return jsonify([]), 200
     
     # Get current teacher ID
-    teacher_id = session.get('teacher_id')
+    teacher_id = session.get("teacher_id", None)
     if not teacher_id:
         return jsonify({"message": "Not logged in"}), 401
     

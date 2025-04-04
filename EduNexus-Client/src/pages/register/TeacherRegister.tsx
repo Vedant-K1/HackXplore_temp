@@ -142,7 +142,7 @@ const Form2 = ({ register, errors }: { register: any; errors: any }) => {
   );
 };
 
-const Form3 = ({ register, errors }: { register: any; errors: any }) => {
+const Form3 = ({ register, errors, handlePicUpload, picLoading }: { register: any; errors: any; handlePicUpload: (file: File) => void; picLoading: boolean }) => {
   return (
     <>
       <Text w="80vh" className='feature-heading' fontSize={'50px'} color={useColorModeValue('purple.600', 'purple.500')} textAlign="center" fontWeight="normal" mb="2%">
@@ -195,9 +195,27 @@ const Form3 = ({ register, errors }: { register: any; errors: any }) => {
         <Input placeholder="Enter Github Personal Access Token" {...register("github_PAT")} />
         <FormErrorMessage>{errors.github_PAT && errors.github_PAT.message}</FormErrorMessage>
       </FormControl>
+
+      <FormControl mb="4%">
+        <FormLabel>Profile Picture</FormLabel>
+        <Input 
+          type="file" 
+          p={1.5} 
+          accept="image/png, image/jpeg" 
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              handlePicUpload(e.target.files[0]);
+            }
+          }} 
+          isDisabled={picLoading}
+        />
+        {picLoading && <Progress size="xs" isIndeterminate colorScheme="purple" mt={2} />}
+      </FormControl>
     </>
   );
 };
+
+
 
 const TeacherRegister = () => {
   const toast = useToast();
@@ -205,11 +223,69 @@ const TeacherRegister = () => {
   const [step, setStep] = useState(1);
   const [progress, setProgress] = useState(33);
 
+  const [pic, setPic] = useState(""); // Will hold the Cloudinary URL
+  const [picFile, setPicFile] = useState<File | null>(null); // Holds the actual file object for upload
+  const [picLoading, setPicLoading] = useState(false);
+
   const resolver: any = step === 1 ? yupResolver(form1Schema) :
     step === 2 ? yupResolver(form2Schema) :
       yupResolver(form3Schema);
 
   const { register, handleSubmit, formState: { errors }, trigger } = useForm({ resolver: resolver });
+
+  const handlePicUpload = (file: File) => {
+    if (!file) return;
+    setPicLoading(true);
+    
+    if (file.type === "image/jpeg" || file.type === "image/png") {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("upload_preset", "Chat-App"); // Replace with your Cloudinary upload preset
+      data.append("cloud_name", "self-owned"); // Replace with your Cloudinary cloud name
+      
+      fetch(`https://api.cloudinary.com/v1_1/self-owned/image/upload`, { // Replace with your Cloudinary URL
+        method: "post",
+        body: data,
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.url) {
+          setPic(data.url.toString()); // Store the URL
+          setPicFile(file); // Keep file reference
+          toast({ 
+            title: "Picture Uploaded!", 
+            status: "success", 
+            duration: 2000,
+            isClosable: true
+          });
+        } else {
+          toast({ 
+            title: "Cloudinary Error", 
+            description: data.error?.message, 
+            status: "error",
+            isClosable: true
+          });
+        }
+        setPicLoading(false);
+      })
+      .catch((err) => {
+        console.error("Pic upload error:", err);
+        toast({ 
+          title: "Upload Failed (Network)", 
+          status: "error",
+          isClosable: true
+        });
+        setPicLoading(false);
+      });
+    } else {
+      toast({ 
+        title: "Please select JPG/PNG", 
+        status: "warning",
+        isClosable: true 
+      });
+      setPicLoading(false);
+    }
+  };
 
   const onSubmit = async (data: { [key: string]: any }) => {
     try {
@@ -233,6 +309,7 @@ const TeacherRegister = () => {
       formData.append('age', data.age);
       formData.append('github_id', data.github_id);
       formData.append('github_PAT', data.github_PAT);
+      formData.append('pic', data.pic);
 
       const response = await axios.post('/api/teacher/register', formData);
       if (response.data.response) {
@@ -278,7 +355,7 @@ const TeacherRegister = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           {step === 1 && <Form1 register={register} errors={errors} />}
           {step === 2 && <Form2 register={register} errors={errors} />}
-          {step === 3 && <Form3 register={register} errors={errors} />}
+          {step === 3 && <Form3 register={register} errors={errors} handlePicUpload={handlePicUpload} picLoading={picLoading} />}
           <ButtonGroup mt="5%" w="100%">
             <Flex w="100%" justifyContent="space-between">
               {step > 1 && (
@@ -309,7 +386,15 @@ const TeacherRegister = () => {
                 </Button>
               )}
               {step === 3 && (
-                <Button variant="outline" colorScheme="purple" type="submit">Submit</Button>
+                <Button 
+                variant="outline" 
+                colorScheme="purple" 
+                type="submit"
+                isLoading={picLoading}
+                isDisabled={picLoading}
+              >
+                Submit
+              </Button>
               )}
 
             </Flex>
