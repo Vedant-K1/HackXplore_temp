@@ -254,7 +254,7 @@ class PptGenerator:
         
         return slides
     
-    def generate_ppt(self, markdown_list, markdown_images_list, course_name, lesson_name, output_folder="Generated_PPTs"):
+    def generate_ppt(self, markdown_list, markdown_images_list, course_name, lesson_name, output_folder="\Generated_PPTs"):
         """
         Generate the complete PowerPoint presentation.
         
@@ -274,6 +274,7 @@ class PptGenerator:
         # Ensure output folder exists
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
+            print("Making Generated PPT Directory", output_folder)
         
         # Create title slide
         self.create_title_slide(prs, course_name, lesson_name)
@@ -282,10 +283,11 @@ class PptGenerator:
         self.create_content_slides(prs, markdown_list, markdown_images_list)
         
         # Save the presentation
-        output_path = os.path.join(output_folder, f"{course_name}_{lesson_name}.pptx")
+        output_path = os.path.join(output_folder, f"{course_name}_{lesson_name}")
+        print(output_path)
         prs.save(output_path)
         return output_path
-
+        #EduNexus-Server\server-side\Generated_PPTs\Large Language Models_Introduction to Generative AI.pptx.pptx
 
     def generate_ppt_content(self, markdown_list : list[dict]):
         prompt = """You are a skilled and creative expert in designing PowerPoint presentations. Your task is to take the content of a course and craft an engaging and concise presentation which is content-rich.\nFor each topic in the course, you will design slides explaining the topics provided. For each topic in the course, consolidate information into fewer slides (10-15 slides) by grouping related subtopics or concepts. Aim to minimize the total number of slides while ensuring each slide contains detailed and comprehensive content that thoroughly explains the topic. Strive for a balance between clarity and depth, presenting all critical information within a logical structure. \nEnsure that the slides are:\n - Organized logically for easy understanding.\n - Engaging and aligned with professional presentation standards.\n\n # Course Content:\n\n"""
