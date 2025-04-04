@@ -977,7 +977,6 @@ def logout():
 #############------------------Code DIV Changes----------------##################
 
 from core.code_div import *
-import tempfile
 
 @teachers.route('/timetable', methods=['POST'])
 def generate_timetable_route():
@@ -1206,3 +1205,202 @@ def search_users():
         })
     
     return jsonify(formatted_results), 200
+
+
+
+
+# @teachers.route("/research", methods=["POST"])
+# def search_route():
+#     data = request.get_json()
+#     query = data.get("query", "")
+#     print(query)
+#     docs = GoogleScholarSearch(query)
+#     prompt = f"""
+# You are a research assistant that will help in searching for related research papers to the topic provided. Answer the user query and use neccessary tools. Search on the topic: '{query}' and return only 6 best papers out of the ones that the tool provides.
+
+# I am giving the google scholar documents related to the topic below:
+# {docs}
+
+# ---------------------
+
+# The output should be strictly in this JSON format:
+# {{
+#     "paper name": "Name of the paper", {{
+#         "link": "Web link/url of the paper",
+#         "summary": "Summary of the paper / summary of the abstract"
+#     }}
+#     and other papers....
+# }}
+# """
+#     response = generate_response(prompt)
+#     return jsonify({"response": response})
+
+
+#--------------------------News-------------------------------------
+from datetime import datetime, timedelta
+NEWS_API_KEY = os.environ.get('NEWS_API_KEY')
+NEWS_API_URL = "https://newsapi.org/v2/everything"
+
+import requests
+@teachers.route('/teacher-news', methods=['GET'])
+def get_teacher_subject_news():
+    # Get teacher ID from session
+    teacher_id = session.get("teacher_id")
+    
+    if not teacher_id:
+        return jsonify({"error": "Not logged in or teacher ID not found in session"}), 401
+    
+    try:
+        
+        # Find teacher in database using the correct collection
+        teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+        
+        if not teacher:
+            return jsonify({"error": "Teacher not found"}), 404
+        
+        # Extract subjects from teacher data
+        if "subjects" not in teacher or not teacher["subjects"]:
+            return jsonify({"error": "No subjects found for this teacher"}), 404
+        
+        # Process subjects string into list
+        if isinstance(teacher["subjects"], str):
+            # Split by comma and clean each subject
+            subjects = [subject.strip() for subject in re.split(r',|;', teacher["subjects"])]
+        elif isinstance(teacher["subjects"], list):
+            subjects = teacher["subjects"]
+        else:
+            return jsonify({"error": "Subjects in unexpected format"}), 500
+        
+        # Collect news for each subject
+        all_news = []
+        
+        for subject in subjects:
+            # Skip empty subjects
+            if not subject:
+                continue
+                
+            # Calculate date for last week (for recent news)
+            last_week = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            
+            # Query parameters for NewsAPI
+            params = {
+                'q': subject,
+                'from': last_week,
+                'sortBy': 'publishedAt',
+                'language': 'en',
+                'apiKey': NEWS_API_KEY,
+                'pageSize': 3  # Limit results per subject
+            }
+            
+            try:
+                response = requests.get(NEWS_API_URL, params=params)
+                response.raise_for_status()  # Raise exception for HTTP errors
+                
+                news_data = response.json()
+                
+                if news_data.get('status') == 'ok' and news_data.get('articles'):
+                    # Format and add subject name to each article
+                    for article in news_data['articles']:
+                        article['subject'] = subject
+                        # Remove potentially problematic fields
+                        if 'content' in article:
+                            del article['content']
+                    
+                    all_news.extend(news_data['articles'])
+                
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching news for {subject}: {str(e)}")
+                continue
+        
+        # Sort all news by publication date (newest first)
+        all_news.sort(key=lambda x: x.get('publishedAt', ''), reverse=True)
+        
+        # Add teacher info to response
+        teacher_info = {
+            "name": f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}",
+            "subjects": subjects
+        }
+        
+        return jsonify({
+            "status": "success",
+            "teacher": teacher_info,
+            "count": len(all_news),
+            "news": all_news
+        })
+        
+    except Exception as e:
+        print(f"Error processing request: {str(e)}")
+        return jsonify({"error": "An error occurred while processing your request"}), 500
+
+
+
+
+research_collection = mongodb["research_papers"]
+from bson import ObjectId
+
+@teachers.route('/research', methods=['POST'])
+def research_papers_endpoint():
+    teacher_id = session.get("teacher_id")  # Get teacher_id from session
+    data = request.json
+    
+    if not data or 'query' not in data:
+        return jsonify({"error": "No query provided"}), 400
+    
+    query = data['query']
+    max_papers = data.get('max_papers', 5)
+    days_back = data.get('days_back', 365)
+    
+    results = search_and_summarize_papers(
+        query=query,
+        max_papers=max_papers,
+        days_back=days_back
+    )
+    
+    # Add teacher_id to results before saving to MongoDB
+    results["teacher_id"] = teacher_id
+
+    # Insert into MongoDB
+    insert_result = research_collection.insert_one(results)
+
+    # Convert ObjectId to string for JSON serialization
+    results["_id"] = str(insert_result.inserted_id)
+
+    return jsonify(results)
+
+
+
+
+@teachers.route('/fetch-papers', methods=['GET'])
+def get_grouped_research_papers():
+    teacher_id = session.get("teacher_id")  # Get the logged-in teacher's ID
+
+    if not teacher_id:
+        return jsonify({"error": "Unauthorized access"}), 403  # Ensure teacher is logged in
+
+    # Aggregation pipeline to group papers by 'query'
+    pipeline = [
+        {"$match": {"teacher_id": teacher_id}},  # Filter by teacher
+        {"$unwind": "$papers"},  # Flatten the papers array
+        {"$group": {
+            "_id": "$query",  # Group by query
+            "timestamp": {"$first": "$timestamp"},
+            "success": {"$first": "$success"},
+            "count": {"$sum": 1},  # Count number of papers in the group
+            "papers": {"$push": {
+                "_id": {"$toString": "$papers._id"},  # Convert ObjectId to string
+                "title": "$papers.title",
+                "authors": "$papers.authors",
+                "year": "$papers.year",
+                "url": "$papers.url",
+                "abstract": "$papers.abstract",
+                "summary": "$papers.summary",
+                "citations": "$papers.citations",
+                "venue": "$papers.venue"
+            }}
+        }},
+        {"$sort": {"timestamp": -1}}  # Sort by latest query timestamp
+    ]
+
+    grouped_papers = list(research_collection.aggregate(pipeline))
+
+    return jsonify(grouped_papers)

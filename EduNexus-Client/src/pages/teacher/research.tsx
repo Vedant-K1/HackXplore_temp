@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -18,55 +18,73 @@ import {
   Heading,
   Text,
   Link,
-  SimpleGrid,
+  Spinner,
   useDisclosure,
   Alert,
   AlertIcon,
   AlertTitle,
-  AlertDescription
+  AlertDescription,
+  Badge,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon
 } from '@chakra-ui/react';
 import { Navbar } from '../../components/navbar';
-import { ExternalLinkIcon } from '@chakra-ui/icons';
+import { ExternalLinkIcon, ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
 
 const Research = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [researchData, setResearchData] = useState({
     topic: '',
-    journals: '',
     details: ''
   });
   
-  // State for success message
+  // State for success message and loading
   const [showSuccess, setShowSuccess] = useState(false);
   const [submittedTopic, setSubmittedTopic] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   
-  // Sample research results data
-  const [results, setResults] = useState([
-    {
-      id: 1,
-      name: 'Artificial intelligence in education: A systematic literature review',
-      link: 'https://www.sciencedirect.com/science/article/pii/S0957417424010339',
-      summary: 'The paper presents a comprehensive review of artificial intelligence in education (AIED) by analyzing over 2,200 articles and a detailed examination of 125 key studies. It addresses three central questions: identifying the main categories of AI applications such as adaptive learning, personalized tutoring, intelligent assessment, and emerging educational tools; exploring predominant research topics that span the technical design of educational systems and investigations into the adoption, impacts, and challenges of AIED; and evaluating major research design elements including guiding theories, methodologies, and research contexts. Overall, the review maps out the current conceptual landscape of AIED, highlighting underexplored areas and offering valuable insights for future research in this dynamic field.'
-    },
-    {
-      id: 2,
-      name: 'Google Gemini as a next generation AI educational tool: a review of emerging educational technology.',
-      link: 'https://link.springer.com/content/pdf/10.1186/s40561-024-00310-z.pdf',
-      summary: 'This emerging technology report discusses Google Gemini as a multimodal generative AI tool and presents its revolutionary potential for future educational technology. It introduces Gemini and its features, including versatility in processing data from text, image, audio, and video inputs and generating diverse content types. This study discusses recent empirical studies, technology in practice, and the relationship between Gemini technology and the educational landscape. This report further explores Gemini relevance for future educational endeavors and practical applications in emerging technologies. Also, it discusses the significant challenges and ethical considerations that must be addressed to ensure its responsible and effective integration into the educational landscape.'
-    },
-    {
-      id: 3,
-      name: 'Towards Goal-oriented Intelligent Tutoring Systems in Online Education',
-      link: 'https://arxiv.org/pdf/2312.10053',
-      summary: 'This work introduces Goal-oriented Intelligent Tutoring Systems (GITS) that enhance traditional ITSs by strategically planning customized exercise and assessment sequences to help students master specific concepts. To tackle the goal-oriented policy learning challenge, the authors propose a novel graph-based reinforcement learning framework called Planning-Assessment-Interaction (PAI). This framework leverages cognitive structure information to improve state representation and action selection, while a dynamically updated cognitive diagnosis model simulates student responses. The approach is validated using three benchmark datasets from various subjects, with experimental results demonstrating both its effectiveness and efficiency, along with analyses that reveal challenges across different student types.'
-    },
-    {
-      id: 4,
-      name: 'Tailoring Education with GenAI: A New Horizon in Lesson Planning',
-      link: 'https://ieeexplore.ieee.org/document/10578690',
-      summary: 'This study introduces a Generative AI (GenAI) tool designed as a digital assistant for educators, enabling the creation of customized lesson plans through an innovative ‘interactive mega-prompt’ system. By allowing educators to input detailed classroom specifics, the tool generates tailored lesson plans using advanced natural language processing. Its effectiveness was evaluated using both quantitative (time savings) and qualitative (user satisfaction) measures across various subjects and educational levels. Preliminary results indicate that educators find the tool highly effective, reducing lesson planning time while enhancing the learning experience. This AI-driven approach marks a paradigm shift in education, with potential applications in broader contexts, including special education.'
+  // State for research results
+  const [results, setResults] = useState([]);
+  const [queryTimestamp, setQueryTimestamp] = useState(null);
+  const [resultCount, setResultCount] = useState(0);
+  const [expandedResults, setExpandedResults] = useState({});
+  
+  // State for grouped research history
+  const [groupedResearch, setGroupedResearch] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    // Fetch research history when component mounts
+    fetchResearchHistory();
+  }, []);
+
+  const fetchResearchHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      const response = await fetch('/api/teacher/fetch-papers');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch research history');
+      }
+      
+      const data = await response.json();
+      setGroupedResearch(data);
+    } catch (err) {
+      console.error('Error fetching research history:', err);
+      setError(err.message);
+    } finally {
+      setIsLoadingHistory(false);
     }
-  ]);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -76,42 +94,137 @@ const Research = () => {
     });
   };
 
-  const handleSubmit = () => {
-    // Here you would typically submit the data to an API
-    console.log('Submitting research request:', researchData);
-    
-    // Save the topic for the success message
-    setSubmittedTopic(researchData.topic);
-    
-    // For demonstration, add a mock result
-    const newResult = {
-      id: results.length + 1,
-      name: researchData.topic,
-      link: 'https://example.com/' + researchData.topic.toLowerCase().replace(/\s+/g, '-'),
-      summary: `Research on ${researchData.topic} focusing on ${researchData.journals}. ${researchData.details}`
-    };
-    
-    // Add new result to the bottom of the list
-    setResults([...results, newResult]);
-    
-    // Close the modal and reset form
-    setResearchData({ topic: '', journals: '', details: '' });
-    onClose();
-    
-    // Show success message
-    setShowSuccess(true);
-    
-    // Hide success message after 5 seconds
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 5000);
+  const toggleResult = (index) => {
+    setExpandedResults(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Save the topic for the success message
+      setSubmittedTopic(researchData.topic);
+      
+      // Call your API endpoint
+      const response = await fetch('/api/teacher/research', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          query: researchData.topic,
+          max_papers: 5,
+          days_back: 365
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch research results');
+      }
+      
+      const data = await response.json();
+      console.log('Research data:', data);
+      
+      // Update results with the correct format
+      if (data.success && data.papers) {
+        setResults(data.papers);
+        setQueryTimestamp(data.timestamp);
+        setResultCount(data.count);
+        // Reset expanded results state when getting new results
+        setExpandedResults({});
+        
+        // Refresh research history
+        fetchResearchHistory();
+      } else {
+        throw new Error('Invalid response format');
+      }
+      
+      // Close the modal and reset form
+      setResearchData({ topic: '', details: '' });
+      onClose();
+      
+      // Show success message
+      setShowSuccess(true);
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+      
+    } catch (err) {
+      console.error('Error submitting research request:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  const truncateText = (text, maxLength = 150) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const displayResearchPapers = (papers) => {
+    return papers.map((paper, index) => (
+      <Box 
+        key={index}
+        p={5}
+        shadow="md"
+        borderWidth="1px"
+        borderRadius="md"
+        width="100%"
+        mb={4}
+      >
+        <HStack mb={2}>
+          <Link href={paper.url} isExternal color="purple.500" fontWeight="bold">
+            {paper.title} <ExternalLinkIcon mx="2px" />
+          </Link>
+          <Badge colorScheme="purple">{paper.year}</Badge>
+        </HStack>
+        <Text fontSize="sm" mb={3}>
+          {paper.authors && paper.authors.join(', ')}
+        </Text>
+        <Text>
+          {expandedResults[index] ? paper.summary : truncateText(paper.summary)}
+        </Text>
+        {paper.summary && paper.summary.length > 150 && (
+          <Button 
+            mt={2} 
+            size="sm" 
+            variant="link" 
+            colorScheme="purple"
+            onClick={() => toggleResult(index)}
+            rightIcon={expandedResults[index] ? <ChevronUpIcon /> : <ChevronDownIcon />}
+          >
+            {expandedResults[index] ? 'See less' : 'See more'}
+          </Button>
+        )}
+      </Box>
+    ));
+  };
+
+  const loadSavedResearch = (query, papers) => {
+    setResults(papers);
+    setExpandedResults({});
+    setSubmittedTopic(query);
   };
 
   return (
     <>
     <Navbar />
     <Box p={5}>
-      <Button colorScheme="purple" onClick={onOpen}>
+      <Button colorScheme="purple" onClick={onOpen} mb={4}>
         Research New Topic
       </Button>
 
@@ -126,6 +239,20 @@ const Research = () => {
           <AlertIcon />
           <AlertTitle mr={2}>Success!</AlertTitle>
           <AlertDescription>Your research topic "{submittedTopic}" has been successfully submitted.</AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Error Alert */}
+      {error && (
+        <Alert 
+          status="error" 
+          mt={4} 
+          mb={4}
+          borderRadius="md"
+        >
+          <AlertIcon />
+          <AlertTitle mr={2}>Error!</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
@@ -146,15 +273,6 @@ const Research = () => {
                   placeholder="Enter research topic" 
                 />
               </FormControl>
-              <FormControl id="journals">
-                <FormLabel>Journals</FormLabel>
-                <Input 
-                  name="journals"
-                  value={researchData.journals}
-                  onChange={handleInputChange}
-                  placeholder="Preferred journals or sources" 
-                />
-              </FormControl>
               <FormControl id="details">
                 <FormLabel>Details</FormLabel>
                 <Textarea
@@ -172,34 +290,87 @@ const Research = () => {
             <Button variant="ghost" mr={3} onClick={onClose}>
               Cancel
             </Button>
-            <Button colorScheme="blue" onClick={handleSubmit}>
+            <Button 
+              colorScheme="blue" 
+              onClick={handleSubmit} 
+              isLoading={isLoading}
+              loadingText="Searching"
+            >
               Submit
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      {/* Research Results */}
-      <Box mt={8}>
-        <Heading size="lg" mb={4}>Research Results</Heading>
-        <VStack spacing={4} align="stretch">
-          {results.map((result) => (
-            <Box 
-              key={result.id}
-              p={5}
-              shadow="md"
-              borderWidth="1px"
-              borderRadius="md"
-              width="100%"
-            >
-              <Link href={result.link} isExternal color="blue.500" fontWeight="bold">
-                {result.name} <ExternalLinkIcon mx="2px" />
-              </Link>
-              <Text mt={2}>{result.summary}</Text>
-            </Box>
-          ))}
-        </VStack>
-      </Box>
+      {/* Research Results Tabs */}
+      <Tabs mt={8} variant="enclosed" colorScheme='purple'>
+        <TabList>
+          <Tab>Current Results</Tab>
+          <Tab>Research History</Tab>
+        </TabList>
+
+        <TabPanels>
+          {/* Current Results Tab */}
+          <TabPanel>
+            <Heading size="lg" mb={4}>Research Results</Heading>
+            {isLoading ? (
+              <Box textAlign="center" py={10}>
+                <Spinner size="xl" />
+                <Text mt={4}>Searching research papers...</Text>
+              </Box>
+            ) : (
+              <VStack spacing={4} align="stretch">
+                {results.length > 0 ? (
+                  displayResearchPapers(results)
+                ) : (
+                  <Box textAlign="center" py={10}>
+                    <Text>No research results to display. Search for a topic to begin.</Text>
+                  </Box>
+                )}
+              </VStack>
+            )}
+          </TabPanel>
+
+          {/* Research History Tab */}
+          <TabPanel>
+            <Heading size="lg" mb={4}>Research History</Heading>
+            {isLoadingHistory ? (
+              <Box textAlign="center" py={10}>
+                <Spinner size="xl" />
+                <Text mt={4}>Loading research history...</Text>
+              </Box>
+            ) : (
+              <Accordion allowToggle>
+                {groupedResearch.length > 0 ? (
+                  groupedResearch.map((group, idx) => (
+                    <AccordionItem key={idx}>
+                      <h2>
+                        <AccordionButton>
+                          <Box flex="1" textAlign="left" color="purple.600">
+                            <Text fontWeight="bold">{group._id}</Text>
+                            <Text fontSize="sm" color="gray.500">
+                              {group.count} paper{group.count !== 1 ? 's' : ''}
+                            </Text>
+                          </Box>
+                          <AccordionIcon />
+                        </AccordionButton>
+                      </h2>
+                      <AccordionPanel pb={4}>
+                        
+                        {displayResearchPapers(group.papers)}
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))
+                ) : (
+                  <Box textAlign="center" py={10}>
+                    <Text>No research history found. Start by researching a topic.</Text>
+                  </Box>
+                )}
+              </Accordion>
+            )}
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </Box>
     </>
   );

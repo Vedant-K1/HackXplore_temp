@@ -134,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isChat = false }) => {
                 <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
                 {teacherAuthenticated  && (
                         <>
-                            <NavLink href="/teacher/dashboard">
+                            <NavLink href="/teacher/home">
                                 <HStack spacing={2}>
                                     <FaHome size={24} />
                                     <span>Home</span>

@@ -4,7 +4,9 @@ from google import genai
 from datetime import datetime
 import os
 
-client = genai.Client(api_key="")
+from dotenv import load_dotenv
+load_dotenv()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_timetable(teachers_subjects, classes_subjects, hours_per_week, preferred_slots, classrooms,labs, lab_requirements,theory_requirements, start_time, end_time):
     
@@ -372,3 +374,280 @@ def save_evaluation_to_mongo(pdf_file_path, evaluation_details, evaluations_coll
     
     result = evaluations_collection.insert_one(document)
     return result.inserted_id
+
+
+
+
+from serpapi import GoogleSearch
+
+
+def GoogleScholarSearch(q: str):
+    params = {
+        "engine": "google_scholar",
+        "q": q,
+        "api_key": os.getenv("SERP_API_KEY")
+    }
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    # organic_results = results["organic_results"]
+    print("RETURN FROM TOOL=========================",results)
+    return results
+
+def generate_response(prompt):
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type='application/json',
+        )
+    )
+    return response.text
+
+
+
+
+
+#===========================New RP ========================
+
+import requests
+from typing import List, Dict, Any, Optional
+import json
+import time
+
+
+
+def get_paper_details(paper_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Get detailed information for a specific paper by ID
+    
+    Args:
+        paper_id: Semantic Scholar Paper ID
+        
+    Returns:
+        Dict containing paper details or None if not found
+    """
+    try:
+        # Semantic Scholar API endpoint for paper details
+        api_url = f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}"
+        
+        # Fields to retrieve
+        fields = "title,abstract,authors,year,url,venue,citationCount"
+        
+        # Parameters for the API request
+        params = {
+            "fields": fields
+        }
+        
+        # Add headers including API key if you have one
+        headers = {
+            "Accept": "application/json"
+        }
+        
+        # Add API key if available
+        api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+        if api_key:
+            headers["x-api-key"] = api_key
+        
+        # Make the API request
+        response = requests.get(api_url, params=params, headers=headers)
+        response.raise_for_status()
+        
+        # Parse the response
+        paper_details = response.json()
+        
+        return paper_details
+        
+    except Exception as e:
+        print(f"Error getting paper details: {str(e)}")
+        return None
+    
+    
+def search_papers(query: str, limit: int = 5, days_back: int = 365) -> List[Dict[str, Any]]:
+    """
+    Search for papers using Semantic Scholar API with retry logic
+    """
+    try:
+        # Semantic Scholar API endpoint
+        api_url = "https://api.semanticscholar.org/graph/v1/paper/search"
+        
+        # Parameters for the API request
+        params = {
+            "query": query,
+            "limit": limit,
+            "fields": "title,authors,year,abstract,url,venue,citationCount,paperId"
+        }
+        
+        # Add headers including API key if you have one
+        headers = {
+            "Accept": "application/json"
+        }
+        
+        # Add API key if available
+        api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+        if api_key:
+            headers["x-api-key"] = api_key
+        
+        # Retry logic with exponential backoff
+        max_retries = 3
+        retry_delay = 5  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                # Make the API request
+                response = requests.get(api_url, params=params, headers=headers)
+                response.raise_for_status()
+                
+                # Parse the response
+                data = response.json()
+                
+                # Return the paper data
+                return data.get("data", [])
+                
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:  # Rate limit error
+                    if attempt < max_retries - 1:  # Not the last attempt
+                        print(f"Rate limit hit, retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        raise  # Re-raise on last attempt
+                else:
+                    raise  # Re-raise other HTTP errors
+        
+    except Exception as e:
+        print(f"Error searching papers: {str(e)}")
+        return []
+
+def search_and_summarize_papers(query: str, max_papers: int = 5, days_back: int = 365) -> Dict[str, Any]:
+    """
+    Search for papers related to a query and generate technical summaries
+    
+    Args:
+        query: The research topic to search for
+        max_papers: Maximum number of papers to return (default: 5)
+        days_back: How many days back to search (default: 365)
+        
+    Returns:
+        Dict containing the query, timestamp, and list of paper summaries
+    """
+    try:
+        # Step 1: Search for papers using Semantic Scholar API
+        papers = search_papers(query, max_papers, days_back)
+        
+        if not papers:
+            return {
+                "query": query,
+                "timestamp": datetime.now().isoformat(),
+                "success": False,
+                "message": "No papers found for the given query",
+                "papers": []
+            }
+        
+        # Step 2: Get detailed information for each paper
+        paper_details = []
+        for paper in papers:
+            # Get full paper details with abstract
+            details = get_paper_details(paper.get("paperId"))
+            if details:
+                paper_details.append(details)
+                
+            # Respect API rate limits
+            time.sleep(1)
+        
+        # Step 3: Generate technical summaries using LLM
+        summarized_papers = []
+        for paper in paper_details:
+            if paper.get("abstract"):
+                summary = generate_technical_summary(
+                    title=paper.get("title", ""),
+                    abstract=paper.get("abstract", ""),
+                    authors=paper.get("authors", []),
+                    year=paper.get("year")
+                )
+                
+                summarized_papers.append({
+                    "title": paper.get("title"),
+                    "authors": [author.get("name") for author in paper.get("authors", [])],
+                    "year": paper.get("year"),
+                    "url": paper.get("url"),
+                    "abstract": paper.get("abstract"),
+                    "summary": summary,
+                    "citations": paper.get("citationCount"),
+                    "venue": paper.get("venue")
+                })
+        
+        return {
+            "query": query,
+            "timestamp": datetime.now().isoformat(),
+            "success": True,
+            "count": len(summarized_papers),
+            "papers": summarized_papers
+        }
+        
+    except Exception as e:
+        print(f"Error in search_and_summarize_papers: {str(e)}")
+        return {
+            "query": query,
+            "timestamp": datetime.now().isoformat(),
+            "success": False,
+            "message": f"Error processing request: {str(e)}",
+            "papers": []
+        }
+        
+        
+def generate_technical_summary(title: str, abstract: str, authors: List[Dict[str, str]], year: Optional[int]) -> str:
+    """
+    Generate a technical summary of a paper using GPT
+    
+    Args:
+        title: Paper title
+        abstract: Paper abstract
+        authors: List of paper authors
+        year: Publication year
+        
+    Returns:
+        Technical summary of the paper
+    """
+    try:
+        # Format the author names
+        author_names = [author.get("name", "") for author in authors]
+        authors_text = ", ".join(author_names)
+        
+        # Create the prompt for GPT
+        prompt = f"""
+        You are a research assistant specializing in creating technical summaries of academic papers.
+        Generate a concise technical summary of the following research paper:
+        
+        Title: {title}
+        Authors: {authors_text}
+        Year: {year if year else 'N/A'}
+        
+        Abstract:
+        {abstract}
+        
+        Please include in your summary:
+        1. The main research problem or question
+        2. The approach or methodology used
+        3. Key innovations or technical contributions
+        4. Main results or findings
+        5. Potential applications or implications
+        
+        Limit the summary to 200-250 words and focus on technical aspects. RETURN A PLAIN TEXT ONLY.
+        """
+        
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+
+        # Extract and return the summary
+        summary = response.text
+        return summary
+        
+    except Exception as e:
+        print(f"Error generating summary: {str(e)}")
+        # Provide a basic summary from the abstract if LLM summarization fails
+        if len(abstract) > 300:
+            return abstract[:297] + "..."
+        return abstract

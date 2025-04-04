@@ -192,7 +192,12 @@ const Form3 = ({ register, errors, handlePicUpload, picLoading }: { register: an
 
       <FormControl isInvalid={!!errors.github_PAT} mb="4%">
         <FormLabel>Github PAT</FormLabel>
-        <Input placeholder="Enter Github Personal Access Token" {...register("github_PAT")} />
+        <Input placeholder="Enter Github Personal Access Token(PAT)" {...register("github_PAT")} />
+        <Text fontSize="12px" ml="15px" fontStyle={'italic'} fontWeight={'bold'} >
+        Open Github -{">"} Settings -{">"} Scroll Down -{">"} Developer Settings -{">"} Generate PAT <br />
+        Make sure to give 'repo', 'admin:org' permissions to the PAT.
+        </Text>
+
         <FormErrorMessage>{errors.github_PAT && errors.github_PAT.message}</FormErrorMessage>
       </FormControl>
 

@@ -19,6 +19,7 @@ import "./pages/student/content/i18n"
 import LessonsGrid from "./pages/teacher/scheduler";
 import Studentscheduler from "./pages/student/Studentscheduler";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import TeacherHome from "./pages/teacher/Home";
 import GitHubRepoExplorer from "./pages/teacher/Github";
 
 
@@ -29,7 +30,7 @@ import ViewProject from "./pages/teacher/projects/ViewProject";
 import CreateProjectStudent from "./pages/student/projects/CreateProject";
 import ProjectListStudent from "./pages/student/projects/ProjectList";
 import ViewProjectStudent from "./pages/student/projects/ViewProject";
-
+import StudentResearch from "./pages/student/StudentResearch.tsx";
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
@@ -46,6 +47,7 @@ function App() {
       <Route element={<Register />} path="/register" />
 
       <Route element={<HomePage />} path="/" />
+      <Route element={<TeacherHome />} path="/teacher/home" />
       <Route element={<TeacherDashboard />} path="/teacher/dashboard" />
       <Route element={<CourseCreate />} path="/teacher/create-course" />
       <Route element={<GitHubRepoExplorer />} path="/teacher/projects" />
@@ -61,7 +63,7 @@ function App() {
       <Route element={<LessonsGrid />} path="/teacher/scheduler" />
       <Route element={<TimetableForm />} path="/teacher/timetable" />
       <Route element={<Research />} path="/teacher/research" />
-      <Route element={<Research />} path="/student/research" />
+      <Route element={<StudentResearch />} path="/student/research" />
       
       
       <Route element={<ChatPage />} path="/chats" />
