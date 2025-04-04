@@ -633,7 +633,7 @@ def generate_technical_summary(title: str, abstract: str, authors: List[Dict[str
         4. Main results or findings
         5. Potential applications or implications
         
-        Limit the summary to 200-250 words and focus on technical aspects.
+        Limit the summary to 200-250 words and focus on technical aspects. RETURN A PLAIN TEXT ONLY.
         """
         
         response = client.models.generate_content(
