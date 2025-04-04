@@ -1059,3 +1059,99 @@ The output should be strictly in this JSON format:
     response = generate_response(prompt)
     return jsonify({"response": response})
 
+
+#--------------------------News-------------------------------------
+from datetime import datetime, timedelta
+NEWS_API_KEY = os.environ.get('NEWS_API_KEY')
+NEWS_API_URL = "https://newsapi.org/v2/everything"
+
+import requests
+@teachers.route('/teacher-news', methods=['GET'])
+def get_teacher_subject_news():
+    # Get teacher ID from session
+    teacher_id = session.get("teacher_id")
+    
+    if not teacher_id:
+        return jsonify({"error": "Not logged in or teacher ID not found in session"}), 401
+    
+    try:
+        
+        # Find teacher in database using the correct collection
+        teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+        
+        if not teacher:
+            return jsonify({"error": "Teacher not found"}), 404
+        
+        # Extract subjects from teacher data
+        if "subjects" not in teacher or not teacher["subjects"]:
+            return jsonify({"error": "No subjects found for this teacher"}), 404
+        
+        # Process subjects string into list
+        if isinstance(teacher["subjects"], str):
+            # Split by comma and clean each subject
+            subjects = [subject.strip() for subject in re.split(r',|;', teacher["subjects"])]
+        elif isinstance(teacher["subjects"], list):
+            subjects = teacher["subjects"]
+        else:
+            return jsonify({"error": "Subjects in unexpected format"}), 500
+        
+        # Collect news for each subject
+        all_news = []
+        
+        for subject in subjects:
+            # Skip empty subjects
+            if not subject:
+                continue
+                
+            # Calculate date for last week (for recent news)
+            last_week = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            
+            # Query parameters for NewsAPI
+            params = {
+                'q': subject,
+                'from': last_week,
+                'sortBy': 'publishedAt',
+                'language': 'en',
+                'apiKey': NEWS_API_KEY,
+                'pageSize': 3  # Limit results per subject
+            }
+            
+            try:
+                response = requests.get(NEWS_API_URL, params=params)
+                response.raise_for_status()  # Raise exception for HTTP errors
+                
+                news_data = response.json()
+                
+                if news_data.get('status') == 'ok' and news_data.get('articles'):
+                    # Format and add subject name to each article
+                    for article in news_data['articles']:
+                        article['subject'] = subject
+                        # Remove potentially problematic fields
+                        if 'content' in article:
+                            del article['content']
+                    
+                    all_news.extend(news_data['articles'])
+                
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching news for {subject}: {str(e)}")
+                continue
+        
+        # Sort all news by publication date (newest first)
+        all_news.sort(key=lambda x: x.get('publishedAt', ''), reverse=True)
+        
+        # Add teacher info to response
+        teacher_info = {
+            "name": f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}",
+            "subjects": subjects
+        }
+        
+        return jsonify({
+            "status": "success",
+            "teacher": teacher_info,
+            "count": len(all_news),
+            "news": all_news
+        })
+        
+    except Exception as e:
+        print(f"Error processing request: {str(e)}")
+        return jsonify({"error": "An error occurred while processing your request"}), 500
