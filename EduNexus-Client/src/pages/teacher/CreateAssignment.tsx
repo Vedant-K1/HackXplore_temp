@@ -18,6 +18,7 @@ import {
   Badge,
   Spinner,
   Text,
+  Tooltip,
   useToast,
 } from '@chakra-ui/react';
 import { Navbar } from '../../components/navbar';
@@ -329,13 +330,35 @@ const CreateAssignment = () => {
                     <Tr>
                       <Th>Student ID</Th>
                       <Th isNumeric>Total Marks Obtained</Th>
+                      
                     </Tr>
                   </Thead>
                   <Tbody>
                     {currentEvaluations.map((evaluation, index) => (
                       <Tr key={index}>
                         <Td>{evaluation.student_id}</Td>
-                        <Td isNumeric>{evaluation.total_marks_obtained}</Td>
+                        <Td isNumeric>
+                        <Tooltip
+                          label={
+                            <Box whiteSpace="pre-wrap" color="#000000">
+                              {evaluation.justification && evaluation.justification.length > 0
+                                ? evaluation.justification
+                                    .map((text, i) => `Q${i + 1}: ${text}`)
+                                    .join('\n')
+                                : 'No justification provided.'}
+                            </Box>
+                          }
+                          aria-label="Justification Tooltip"
+                          hasArrow
+                          bg="purple.300"
+                          color="white"
+                        >
+                          <Text cursor="pointer">{evaluation.total_marks_obtained}</Text>
+                        </Tooltip>
+
+
+                        </Td>
+                        
                       </Tr>
                     ))}
                   </Tbody>

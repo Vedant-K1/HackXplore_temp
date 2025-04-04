@@ -23,16 +23,16 @@ import {
   Alert,
   AlertIcon,
   AlertTitle,
-  AlertDescription
+  AlertDescription,
+  Badge
 } from '@chakra-ui/react';
 import { Navbar } from '../../components/navbar';
-import { ExternalLinkIcon } from '@chakra-ui/icons';
+import { ExternalLinkIcon, ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
 
 const Research = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [researchData, setResearchData] = useState({
     topic: '',
-    journals: '',
     details: ''
   });
   
@@ -44,6 +44,9 @@ const Research = () => {
   
   // State for research results
   const [results, setResults] = useState([]);
+  const [queryTimestamp, setQueryTimestamp] = useState(null);
+  const [resultCount, setResultCount] = useState(0);
+  const [expandedResults, setExpandedResults] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -51,6 +54,13 @@ const Research = () => {
       ...researchData,
       [name]: value
     });
+  };
+
+  const toggleResult = (index) => {
+    setExpandedResults(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
   };
 
   const handleSubmit = async () => {
@@ -67,7 +77,11 @@ const Research = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query: researchData.topic }),
+        body: JSON.stringify({ 
+          query: researchData.topic,
+          max_papers: 5,
+          days_back: 365
+        }),
       });
       
       if (!response.ok) {
@@ -75,29 +89,21 @@ const Research = () => {
       }
       
       const data = await response.json();
-      console.log(data)
-      // Parse the response and transform it into the format needed for display
-      const parsedResults = [];
-      const responseObj = JSON.parse(data.response);
+      console.log('Research data:', data);
       
-      Object.entries(responseObj).forEach(([index, paperObj]) => {
-        // Each paperObj has a single key (paper name) with an object value
-        const paperName = Object.keys(paperObj)[0];
-        const paperDetails = paperObj[paperName];
-        
-        parsedResults.push({
-          id: parseInt(index) + 1,
-          name: paperName,
-          link: paperDetails.link,
-          summary: paperDetails.summary
-        });
-      });
-      
-      // Update results state
-      setResults(parsedResults);
+      // Update results with the correct format
+      if (data.success && data.papers) {
+        setResults(data.papers);
+        setQueryTimestamp(data.timestamp);
+        setResultCount(data.count);
+        // Reset expanded results state when getting new results
+        setExpandedResults({});
+      } else {
+        throw new Error('Invalid response format');
+      }
       
       // Close the modal and reset form
-      setResearchData({ topic: '', journals: '', details: '' });
+      setResearchData({ topic: '', details: '' });
       onClose();
       
       // Show success message
@@ -114,6 +120,18 @@ const Research = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  const truncateText = (text, maxLength = 150) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   return (
@@ -169,15 +187,6 @@ const Research = () => {
                   placeholder="Enter research topic" 
                 />
               </FormControl>
-              <FormControl id="journals">
-                <FormLabel>Journals</FormLabel>
-                <Input 
-                  name="journals"
-                  value={researchData.journals}
-                  onChange={handleInputChange}
-                  placeholder="Preferred journals or sources" 
-                />
-              </FormControl>
               <FormControl id="details">
                 <FormLabel>Details</FormLabel>
                 <Textarea
@@ -210,6 +219,9 @@ const Research = () => {
       {/* Research Results */}
       <Box mt={8}>
         <Heading size="lg" mb={4}>Research Results</Heading>
+        
+        
+        
         {isLoading ? (
           <Box textAlign="center" py={10}>
             <Spinner size="xl" />
@@ -217,21 +229,46 @@ const Research = () => {
           </Box>
         ) : (
           <VStack spacing={4} align="stretch">
-            {results.map((result) => (
+            {results.map((paper, index) => (
               <Box 
-                key={result.id}
+                key={index}
                 p={5}
                 shadow="md"
                 borderWidth="1px"
                 borderRadius="md"
                 width="100%"
               >
-                <Link href={result.link} isExternal color="purple.500" fontWeight="bold">
-                  {result.name} <ExternalLinkIcon mx="2px" />
-                </Link>
-                <Text mt={2}>{result.summary}</Text>
+                <HStack mb={2}>
+                  <Link href={paper.url} isExternal color="purple.500" fontWeight="bold">
+                    {paper.title} <ExternalLinkIcon mx="2px" />
+                  </Link>
+                  <Badge colorScheme="purple">{paper.year}</Badge>
+                </HStack>
+                <Text fontSize="sm" mb={3}>
+                  {paper.authors && paper.authors.join(', ')}
+                </Text>
+                <Text>
+                  {expandedResults[index] ? paper.summary : truncateText(paper.summary)}
+                </Text>
+                {paper.summary && paper.summary.length > 150 && (
+                  <Button 
+                    mt={2} 
+                    size="sm" 
+                    variant="link" 
+                    colorScheme="purple"
+                    onClick={() => toggleResult(index)}
+                    rightIcon={expandedResults[index] ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                  >
+                    {expandedResults[index] ? 'See less' : 'See more'}
+                  </Button>
+                )}
               </Box>
             ))}
+            {results.length === 0 && !isLoading && (
+              <Box textAlign="center" py={10}>
+                <Text>No research results to display. Search for a topic to begin.</Text>
+              </Box>
+            )}
           </VStack>
         )}
       </Box>
