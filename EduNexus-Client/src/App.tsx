@@ -30,7 +30,7 @@ import ViewProject from "./pages/teacher/projects/ViewProject";
 import CreateProjectStudent from "./pages/student/projects/CreateProject";
 import ProjectListStudent from "./pages/student/projects/ProjectList";
 import ViewProjectStudent from "./pages/student/projects/ViewProject";
-
+import StudentResearch from "./pages/student/StudentResearch.tsx";
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
 import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
@@ -62,7 +62,7 @@ function App() {
       <Route element={<LessonsGrid />} path="/teacher/scheduler" />
       <Route element={<TimetableForm />} path="/teacher/timetable" />
       <Route element={<Research />} path="/teacher/research" />
-      <Route element={<Research />} path="/student/research" />
+      <Route element={<StudentResearch />} path="/student/research" />
       
       
       <Route element={<Testing />} path="/testing" />

@@ -70,7 +70,7 @@ const Research = () => {
   const fetchResearchHistory = async () => {
     try {
       setIsLoadingHistory(true);
-      const response = await fetch('/api/teacher/fetch-papers');
+      const response = await fetch('/api/student/fetch-papers');
       
       if (!response.ok) {
         throw new Error('Failed to fetch research history');
@@ -110,7 +110,7 @@ const Research = () => {
       setSubmittedTopic(researchData.topic);
       
       // Call your API endpoint
-      const response = await fetch('/api/teacher/research', {
+      const response = await fetch('/api/student/research', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
