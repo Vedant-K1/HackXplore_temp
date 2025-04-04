@@ -1252,7 +1252,7 @@ def submit_assignment():
 from core.code_div import *
 
 
-research_collection = mongodb["research_papers_stud"]
+research_collection = mongodb["student_research"]
 from bson import ObjectId
 
 @students.route('/research', methods=['POST'])
