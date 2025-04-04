@@ -19,6 +19,7 @@ import "./pages/student/content/i18n"
 import LessonsGrid from "./pages/teacher/scheduler";
 import Studentscheduler from "./pages/student/Studentscheduler";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import TeacherHome from "./pages/teacher/Home";
 import GitHubRepoExplorer from "./pages/teacher/Github";
 
 
@@ -45,6 +46,7 @@ function App() {
       <Route element={<Register />} path="/register" />
 
       <Route element={<HomePage />} path="/" />
+      <Route element={<TeacherHome />} path="/teacher/home" />
       <Route element={<TeacherDashboard />} path="/teacher/dashboard" />
       <Route element={<CourseCreate />} path="/teacher/create-course" />
       <Route element={<GitHubRepoExplorer />} path="/teacher/projects" />
