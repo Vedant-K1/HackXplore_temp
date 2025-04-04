@@ -14,6 +14,13 @@ class Config():
     SQLALCHEMY_DATABASE_URI = 'sqlite:///database.db'
 
     # client session configuration
-    PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
+    PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     SESSION_PERMANENT = True
     SESSION_COOKIE_NAME = 'user_session'
+    
+    # BY ME DHRUVIL
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_HTTPONLY = True # Good practice, usually True by default
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_DOMAIN = None
+     

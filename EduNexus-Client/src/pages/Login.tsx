@@ -21,6 +21,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useState } from 'react';
+import { ChatState } from "../contexts/chatProvider";
 
 const schema = yup.object().shape({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -30,12 +31,21 @@ const schema = yup.object().shape({
 type LoginData = {
   email: string;
   password: string;
+//   user_info : {
+//     "_id": string,
+//     "name": string,
+//     "email": string,
+//     "pic": string
+//     "type": string
+
+// }
 };
 
 const Login = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState(0);
+  const { setUser } = ChatState();
 
   const handleCreateAccountClick = () => {
     navigate('/register');
@@ -48,10 +58,13 @@ const Login = () => {
   const handleLogin = async (data: LoginData, endpoint: string) => {
     try {
       const response = await axios.post(endpoint, data, { withCredentials: true });
-      console.log(data);
       if (response.data.response) {
+        console.log("responde",response);
        
-        
+        const userInfo = response.data.user_info
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        setUser(response.data.user_info);
+
         toast({
           title: 'Login successful.',
           description: 'You have successfully logged in.',

@@ -21,8 +21,13 @@ from server.utils import ServerUtils
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from bson.objectid import ObjectId
+from bson.errors import InvalidId 
 from urllib.parse import quote_plus
 import json
+from ..controllers.chat_controllers import access_chat, fetch_chats, create_group_chat, rename_group, add_to_group, remove_from_group, get_id_type
+from ..controllers.message_controllers import send_message, all_messages
+from sqlalchemy import or_
+
 
 students = Blueprint(name='students', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
@@ -34,6 +39,31 @@ lessons_collection = mongodb["lessons"]
 courses_collection = mongodb["course"]
 lab_manuals_collection = mongodb["lab_manuals"]
 projects_collection = mongodb["projects"]
+
+# def get_id_type(id_value):
+
+#     # MongoDB ObjectID
+#     if isinstance(id_value, ObjectId):
+#         return "ObjectId"
+
+#     if isinstance(id_value, str):
+#         if len(id_value) == 24:
+#             try:
+#                 ObjectId(id_value)
+#                 # MongoDB string id
+#                 return "ObjectId"
+#             except InvalidId:
+#                 # Invalid
+#                 pass 
+        
+#         # Mail, name, github_id, github_PAT
+#         return "String"
+
+#     # SQL
+#     if isinstance(id_value, int):
+#         return "Integer"
+    
+#     return f"Other ({type(id_value).__name__})"
 
 @students.route('/register',methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -54,16 +84,39 @@ def register():
     github_id = request.form['github_id']
     github_PAT = request.form['github_PAT']
     user_exists = User.query.filter_by(email=email).first() is not None
+    pic = request.form['pic']
 
     if user_exists:
         return jsonify({"message": "User already exists", "response":False}), 201
     
     hash_pass = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(fname=fname, lname=lname, email=email, password=hash_pass, country=country, state=state, city=city, gender=gender, age=age, college_name=college_name, course_name=course_name, interests=interests, student_id=student_id_file.read(),github_id=github_id,github_PAT=github_PAT)
+    new_user = User(fname=fname, lname=lname, email=email, password=hash_pass, country=country, state=state, city=city, gender=gender, age=age, college_name=college_name, course_name=course_name, interests=interests, student_id=student_id_file.read(),github_id=github_id,github_PAT=github_PAT,pic=pic if pic else "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
     db.session.add(new_user)
     db.session.commit()
-
-    response = jsonify({"message": "User created successfully", "id":new_user.user_id, "email":new_user.email, "response":True}), 200
+    
+    user_pic = getattr(new_user, 'pic', "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+    user_info = {
+            "_id": new_user.user_id, # Use the primary key from SQL model
+            "name": f"{new_user.fname} {new_user.lname}",
+            "email": new_user.email,
+            "pic": user_pic,
+            "type": "student"
+            # Add other fields if needed
+        }
+    print( "ACTUAL",new_user.user_id)
+    session.permanent = True
+    session["user_id"] = new_user.user_id # BY ME DHRUVIL
+    session.modified = True
+    print("SET",session.get("user_id"))
+    response = jsonify({"message": "User created successfully", "user_info":user_info,"id":new_user.user_id, "email":new_user.email, "type": "student","response":True}), 200
+    # response.set_cookie(
+    #     'user_session',                           # Use your actual session cookie name
+    #     session.get('user_session'),              # Get actual session value
+    #     httponly=True,                       # Not accessible via JavaScript
+    #     secure=False,                        # Set to True in production with HTTPS
+    #     samesite='None',                     # Critical for cross-origin requests
+    #     max_age=60*60*24*7                   # 7 days in seconds
+    # )
     return response
 
 # login route  --> add username to session and make it unique in user model
@@ -80,17 +133,33 @@ def login():
     
     if not bcrypt.check_password_hash(user.password, password.encode('utf-8')):
         return jsonify({"message": "Incorrect password", "response":False}), 200
-    
+    session.permanent = True
     session["user_id"] = user.user_id
+    session.modified = True
+    print("SET",session.get("user_id"),user.user_id)
     profile = f"Name: {user.fname} {user.lname}, Email: {user.email}, Country: {user.country}, Age: {user.age}, Ongoing Course Name: {user.course_name}, User Interest: {user.interests}"
 
     assistant = GEMINI_CLIENT.initialize_assistant(profile= profile, tools=TOOLS)
-    return jsonify({"message": "User logged in successfully", "email":user.email, "response":True}), 200
+    user_pic = getattr(user, 'pic', "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+    user_info = {
+        "_id": user.user_id, # Use the primary key from SQL model
+        "name": f"{user.fname} {user.lname}",
+        "email": user.email,
+        "pic": user_pic,
+        "type": "student"
+        # Add other fields if needed
+    }
+    response = jsonify({"message": "User logged in successfully", "email":user.email, "type": "student","user_info":user_info,"id":user.user_id,"response":True})
+    response.status_code = 200  # Set status code on the response object
+    # response.headers.add('Access-Control-Allow-Credentials', 'true')  # Now this works
+    response.headers.add('Vary', 'Origin')
+    return response
 
 @students.route('/user_profile', methods=['GET', 'POST'])
 @cross_origin(supports_credentials=True)
 def user_profile():
     user_id = session.get("user_id", None)
+    
     if user_id is None:
         return jsonify({"message": "User not logged in", "response":False}), 401
     
@@ -279,6 +348,7 @@ def delete():
 #         return jsonify({"message": "Query successful", "images": module.image_urls, "content": trans_submodule_content, "response": True}), 200
 
 @students.route('/projects',methods=["POST"])
+@cross_origin(supports_credentials=True)
 def get_projects_list():
     user_id = session.get('user_id')
     print(session.get('user_id'))
@@ -305,6 +375,7 @@ def get_projects_list():
     }), 200
     
 @students.route('/projects/<string:projectname>',methods=["POST"])
+@cross_origin(supports_credentials=True)
 def get_project(projectname):
     user_id = session.get('user_id')
     print(session.get('user_id'))
@@ -319,6 +390,7 @@ def get_project(projectname):
     return jsonify({"message": "Query successful", "project":projectname,"github_id":owner.owner_id,"github_PAT":user.github_PAT, "response": True}), 200
 
 @students.route('/create_project', methods=['POST'])
+
 @cross_origin(supports_credentials=True)
 def create_project():
     user_id = session.get("user_id")
@@ -1244,6 +1316,145 @@ def submit_assignment():
         "evaluation": evaluation_entry
     })
 
+    
+# Add these helper functions in the students blueprint
+def get_teacher_by_id(teacher_id):
+    """Get teacher by ID"""
+    id_type = get_id_type(teacher_id)
+    
+    if id_type == "ObjectId" or (isinstance(teacher_id, str) and len(teacher_id) == 24):
+        try:
+            return teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+        except InvalidId:
+            pass
+    
+    return None
+
+def get_student_by_id(student_id):
+    """Get student by ID"""
+    id_type = get_id_type(student_id)
+    
+    if id_type == "Integer":
+        return User.query.get(student_id)
+    
+    return None
+
+# Add these routes to the students blueprint
+@students.route('/chats', methods=['POST'])
+# @cross_origin(supports_credentials=True)
+def student_access_chat():
+    user_id = session.get("user_id", None)
+    return access_chat(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
+
+@students.route('/chats', methods=['GET'])
+# @cross_origin(supports_credentials=True)
+def student_fetch_chats():
+    print("-" * 20) # Separator for clarity
+    print(f"FLASK /chats - Incoming Request Headers: {request.headers}") # Print all headers
+    print(f"FLASK /chats - Incoming Cookies: {request.cookies}") # Print parsed cookies
+    print(f"FLASK /chats - Session BEFORE access: {dict(session)}") 
+    user_id = session.get("user_id", None)
+    # print("OOOOOOOOO",user_id)
+    print("SET222",session.get("user_id"))
+    return fetch_chats(mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
+
+@students.route('/chats/group', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def student_create_group_chat():
+    user_id = session.get("user_id", None)
+    return create_group_chat(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
+
+@students.route('/chats/rename', methods=['PUT'])
+@cross_origin(supports_credentials=True)
+def student_rename_group():
+    user_id = session.get("user_id", None)
+    return rename_group(request, mongodb, is_teacher=False,current_user_id=user_id)
+
+@students.route('/chats/groupadd', methods=['PUT'])
+@cross_origin(supports_credentials=True)
+def student_add_to_group():
+    user_id = session.get("user_id", None)
+    return add_to_group(request, mongodb, is_teacher=False,current_user_id=user_id)
+
+@students.route('/chats/groupremove', methods=['PUT'])
+@cross_origin(supports_credentials=True)
+def student_remove_from_group():
+    user_id = session.get("user_id", None)
+    return remove_from_group(request, mongodb, is_teacher=False,current_user_id=user_id)
+
+@students.route('/messages', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def student_send_message():
+    user_id = session.get("user_id", None)
+    return send_message(request, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
+
+@students.route('/messages/<chat_id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def student_all_messages(chat_id):
+    user_id = session.get("user_id", None)
+    return all_messages(chat_id, mongodb, is_teacher=False, get_teacher_func=get_teacher_by_id, get_student_func=get_student_by_id,current_user_id=user_id)
+
+# Add a route for searching users (teachers and students) for chat
+@students.route('/users/search', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def search_users():
+    search_query = request.args.get('search', '')
+    if not search_query:
+        return jsonify([]), 200
+    
+    # Get current teacher ID
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"message": "Not logged in"}), 401
+    
+    # Search for teachers
+    teacher_results = list(teachers_collection.find({
+        "$and": [
+            # {"_id": {"$ne": ObjectId(teacher_id)}},
+            {"$or": [
+                {"first_name": {"$regex": search_query, "$options": "i"}},
+                {"last_name": {"$regex": search_query, "$options": "i"}},
+                {"email": {"$regex": search_query, "$options": "i"}}
+            ]}
+        ]
+    }))
+    
+    # Search for students
+    student_results = User.query.filter(
+        or_(
+            User.fname.ilike(f'%{search_query}%'),
+            User.lname.ilike(f'%{search_query}%'),
+            User.email.ilike(f'%{search_query}%')
+        )
+        ).filter(
+            # Add the new AND condition to exclude the current user
+            User.user_id != user_id
+        ).all()
+    
+    # Format results
+    formatted_results = []
+    
+    # Format teacher results
+    for teacher in teacher_results:
+        formatted_results.append({
+            "_id": str(teacher["_id"]),
+            "name": f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}",
+            "email": teacher.get('email', ''),
+            "pic": teacher.get('pic', 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg'),
+            "type": "teacher"
+        })
+    
+    # Format student results
+    for student in student_results:
+        formatted_results.append({
+            "_id": student.user_id,
+            "name": f"{student.fname} {student.lname}",
+            "email": student.email,
+            "pic": 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
+            "type": "student"
+        })
+    
+    return jsonify(formatted_results), 200
     
     
     

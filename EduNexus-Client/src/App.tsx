@@ -38,6 +38,7 @@ import TimetableForm from "./pages/teacher/generate_timetable.tsx";
 import CreateAssignment from "./pages/teacher/CreateAssignment.tsx";
 import Assignment from "./pages/Assignment.tsx";
 import Research from "./pages/teacher/research.tsx";
+import ChatPage from './pages/Chat/chatPage'
 function App() {
   return (
     <Routes>
@@ -64,6 +65,8 @@ function App() {
       <Route element={<Research />} path="/teacher/research" />
       <Route element={<StudentResearch />} path="/student/research" />
       
+      
+      <Route element={<ChatPage />} path="/chats" />
       
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />
